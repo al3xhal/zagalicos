@@ -1,0 +1,1298 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#111417">
+<title>Zagalicos · Centro de mando</title>
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<link rel="icon" type="image/png" href="./icon-192.png">
+<meta name="apple-mobile-web-app-title" content="Zagalicos">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="description" content="Inteligencia de mercado para Biwenger.">
+<style>
+  :root{
+    --bg:#eef0f2; --card:#fff; --ink:#14181b; --muted:#7b878f; --line:#e2e6e9;
+    --black:#14181b; --red:#e2333f; --green:#2fa84f; --blue:#2b8fd6; --amber:#e8a51c;
+    --pt:#e8a51c; --df:#2b8fd6; --mc:#2fa84f; --dl:#e2413a;
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);padding-bottom:76px}
+  header{position:sticky;top:0;z-index:20;background:var(--black);color:#fff;
+    padding:12px 16px;display:flex;align-items:center;justify-content:space-between}
+  header h1{font-size:.95rem;margin:0;font-weight:800;letter-spacing:.02em;text-transform:uppercase}
+  header h1 span{color:var(--red)}
+  .pill{font-size:.66rem;font-family:var(--mono);padding:3px 8px;border-radius:20px;background:#2a3035;color:#9aa6ad}
+  .pill.on{background:rgba(47,168,79,.18);color:#63d488}
+  main{padding:14px 12px 20px;max-width:680px;margin:0 auto}
+  section{display:none} section.active{display:block}
+
+  .lbl{display:inline-block;background:var(--black);color:#fff;font-size:.68rem;font-weight:800;
+    text-transform:uppercase;letter-spacing:.08em;padding:6px 12px;border-radius:4px;margin-bottom:10px}
+  .card{background:var(--card);border-radius:12px;padding:14px;margin-bottom:12px;
+    box-shadow:0 1px 3px rgba(20,24,27,.07)}
+  .card h3{font-size:.9rem;margin:0 0 4px;font-weight:700}
+  .note{font-size:.73rem;color:var(--muted);line-height:1.5}
+  .note b{color:var(--ink)}
+  label{display:block;font-size:.72rem;color:var(--muted);margin:10px 0 4px;font-weight:600}
+  label:first-child{margin-top:0}
+  input{width:100%;padding:10px 12px;border-radius:9px;border:1px solid var(--line);
+    background:#f7f8f9;font-size:.9rem;font-family:var(--sans);color:var(--ink)}
+  input:focus{outline:2px solid var(--red);border-color:transparent;background:#fff}
+  button{padding:11px;border-radius:9px;border:none;background:var(--red);color:#fff;
+    font-weight:700;font-size:.85rem;cursor:pointer;width:100%;margin-top:12px}
+  button.sec{background:#f0f2f4;color:var(--ink);border:1px solid var(--line);margin-top:0;width:auto;padding:8px 14px;font-size:.78rem}
+  button:disabled{opacity:.45}
+  .msg{margin-top:9px;font-size:.78rem;padding:9px 11px;border-radius:8px;display:none;line-height:1.45}
+  .msg.show{display:block}
+  .msg.ok{background:rgba(47,168,79,.1);color:#1d7a37}
+  .msg.err{background:rgba(226,51,63,.1);color:#b3202b}
+
+  .rowtop{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+  .rowtop .lbl{margin-bottom:0}
+
+  .plr{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)}
+  .plr:last-child{border-bottom:none}
+  .face{width:38px;height:38px;border-radius:50%;background:#e8ebed;flex-shrink:0;object-fit:cover;
+    display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;color:var(--muted)}
+  .plr .mid{flex:1;min-width:0}
+  .plr .nm{font-size:.87rem;font-weight:650;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .plr .sb{font-size:.7rem;color:var(--muted);margin-top:2px;display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+  .plr .rt{text-align:right;flex-shrink:0}
+  .eur{font-family:var(--mono);font-size:.85rem;font-weight:700}
+  .sub2{font-size:.68rem;color:var(--muted);font-family:var(--mono);margin-top:2px}
+
+  .pos{display:inline-block;width:20px;height:20px;line-height:20px;border-radius:50%;
+    color:#fff;font-size:.56rem;font-weight:800;text-align:center;flex-shrink:0}
+  .pos.p1{background:var(--pt)} .pos.p2{background:var(--df)}
+  .pos.p3{background:var(--mc)} .pos.p4{background:var(--dl)}
+  .pos.p0{background:#b9c2c8}
+
+  .tag{font-size:.62rem;font-weight:700;padding:2px 6px;border-radius:4px;background:#f0f2f4;color:var(--muted)}
+  .tag.up{background:rgba(47,168,79,.13);color:#1d7a37}
+  .tag.dn{background:rgba(226,51,63,.12);color:#b3202b}
+  .tag.hot{background:rgba(232,165,28,.16);color:#8a6205}
+  .tag.dark{background:var(--black);color:#fff}
+
+  .dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+  .dot.g{background:var(--green)} .dot.y{background:var(--amber)} .dot.r{background:var(--red)}
+
+  .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0 4px}
+  .kpi{background:#f7f8f9;border-radius:9px;padding:9px 8px;text-align:center}
+  .kpi .v{font-family:var(--mono);font-weight:800;font-size:.9rem}
+  .kpi .k{font-size:.62rem;color:var(--muted);margin-top:2px;text-transform:uppercase;letter-spacing:.04em}
+
+  .bar{height:6px;background:#eceff1;border-radius:3px;overflow:hidden;margin-top:6px}
+  .bar i{display:block;height:100%;background:var(--red)}
+
+  .chips{display:flex;gap:6px;overflow-x:auto;margin-bottom:10px;padding-bottom:2px}
+  .chip{flex-shrink:0;padding:6px 12px;border-radius:20px;border:1px solid var(--line);
+    background:#fff;color:var(--muted);font-size:.75rem;font-weight:600;cursor:pointer;white-space:nowrap}
+  .chip.on{background:var(--black);color:#fff;border-color:var(--black)}
+
+  .empty{text-align:center;color:var(--muted);font-size:.8rem;padding:22px 10px;line-height:1.6}
+  details{margin-top:10px} summary{font-size:.72rem;color:var(--muted);cursor:pointer}
+  pre{font-size:.64rem;background:#f7f8f9;padding:9px;border-radius:8px;overflow-x:auto;
+    max-height:220px;font-family:var(--mono);white-space:pre-wrap;word-break:break-all}
+
+  nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--line);
+    display:flex;padding:6px 4px calc(6px + env(safe-area-inset-bottom));z-index:20}
+  nav button{flex:1;background:none;border:none;color:var(--muted);font-size:.66rem;font-weight:700;
+    padding:6px 0 4px;margin:0;width:auto;border-top:2px solid transparent;border-radius:0}
+  nav button.on{color:var(--red);border-top-color:var(--red)}
+  nav button i{display:block;font-style:normal;font-size:1.05rem;margin-bottom:1px}
+
+  .bidrow{display:flex;justify-content:space-between;padding:5px 0;font-size:.78rem;border-bottom:1px dashed var(--line)}
+  .bidrow:last-child{border:none}
+  .bidrow b{font-family:var(--mono)}
+  .btn-squad{width:100%;margin-top:10px;padding:11px;border-radius:9px;border:1px solid var(--line);
+    background:#f7f8f9;color:var(--ink);font-weight:700;font-size:.8rem;display:flex;
+    align-items:center;justify-content:center;gap:7px;cursor:pointer}
+  .btn-squad:active{background:#eceff1}
+  .btn-squad .arw{transition:transform .18s;font-size:.7rem;color:var(--muted)}
+  .btn-squad.open .arw{transform:rotate(180deg)}
+  .gear{background:none;border:none;color:#9aa6ad;font-size:1.15rem;padding:0 0 0 10px;
+    width:auto;margin:0;cursor:pointer}
+  .podio{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+  .podio:last-child{border:none}
+  .podio .pos-n{width:22px;text-align:center;font-family:var(--mono);font-weight:800;color:var(--muted);font-size:.8rem}
+  .podio .pos-n.g1{color:#c9a227} .podio .pos-n.g2{color:#8d9499} .podio .pos-n.g3{color:#b07a3f}
+  .rec{background:linear-gradient(135deg,#14181b,#2a3439);color:#fff;border-radius:12px;padding:14px;margin-bottom:10px}
+  .rec .rk{font-size:.64rem;text-transform:uppercase;letter-spacing:.09em;color:#8fa0a8;font-weight:700}
+  .rec .rv{font-family:var(--mono);font-size:1.35rem;font-weight:800;margin:4px 0 2px}
+  .rec .rd{font-size:.76rem;color:#c3ced3;line-height:1.45}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Zagalicos <span>·</span> Centro de mando</h1>
+  <div style="display:flex;align-items:center">
+    <span class="pill" id="pill">sin conectar</span>
+    <button class="gear" id="nAjustes" title="Ajustes">⚙</button>
+  </div>
+</header>
+
+<main>
+
+<!-- ============ MERCADO ============ -->
+<section id="s-mercado" class="active">
+  <div class="card">
+    <input id="qSearch" placeholder="🔍 ¿Quién tiene a…?  Escribe un jugador">
+    <div id="qOut"></div>
+  </div>
+
+  <div class="rowtop">
+    <span class="lbl">Subastas abiertas</span>
+    <button class="sec" id="bMercado">Actualizar</button>
+  </div>
+  <div class="card" id="cNoCfg"><div class="empty">Configura la conexión en <b>Ajustes</b> para empezar.</div></div>
+  <div id="mktWrap"></div>
+  <div class="card" id="cMktEmpty" style="display:none"><div class="empty" id="mktEmptyTxt"></div></div>
+</section>
+
+<!-- ============ RIVALES ============ -->
+<section id="s-rivales">
+  <div class="rowtop">
+    <span class="lbl">Rivales</span>
+    <button class="sec" id="bRivales">Actualizar</button>
+  </div>
+  <div class="card"><div class="note" id="spyNote">—</div></div>
+  <div id="spyWrap"></div>
+</section>
+
+<!-- ============ CLÁUSULAS ============ -->
+<section id="s-clausulas">
+  <div class="rowtop">
+    <span class="lbl">Cláusulas</span>
+    <button class="sec" id="bClaus">Calcular</button>
+  </div>
+  <div class="chips" id="clChips">
+    <div class="chip on" data-cl="atk">Chollos ajenos</div>
+    <div class="chip" data-cl="def">Mi exposición</div>
+  </div>
+  <div class="card"><div class="note" id="clNote">Cruza la cláusula de cada jugador con su valor real, quién puede pagarla y si está bloqueada.</div></div>
+  <div id="clWrap"></div>
+</section>
+
+<!-- ============ HISTORIAL ============ -->
+<section id="s-historial">
+  <div class="rowtop">
+    <span class="lbl">Movimientos</span>
+    <button class="sec" id="bHist">Actualizar</button>
+  </div>
+  <div class="card"><div class="note" id="histNote">—</div></div>
+  <div class="card"><div id="histList"></div></div>
+</section>
+
+<!-- ============ ESTADÍSTICAS ============ -->
+<section id="s-stats">
+  <div class="rowtop">
+    <span class="lbl">Estadísticas</span>
+    <button class="sec" id="bStats">Calcular</button>
+  </div>
+  <div class="chips" id="stChips">
+    <div class="chip on" data-st="records">Récords</div>
+    <div class="chip" data-st="managers">Managers</div>
+    <div class="chip" data-st="duelos">Duelos</div>
+    <div class="chip" data-st="jugadores">Jugadores</div>
+    <div class="chip" data-st="liga">Pulso</div>
+  </div>
+  <div id="stWrap"><div class="card"><div class="empty">Pulsa «Calcular».<br>Cuanto más histórico tengas archivado, más jugosas.</div></div></div>
+</section>
+
+<!-- ============ AJUSTES ============ -->
+<section id="s-ajustes">
+  <span class="lbl">Conexión</span>
+  <div class="card">
+    <label for="fWorker">URL del Worker</label>
+    <input id="fWorker" placeholder="https://biwenger-proxy.al3xhal.workers.dev">
+    <label for="fMail">Email de Biwenger</label>
+    <input id="fMail" type="email" autocomplete="username">
+    <label for="fPass">Contraseña</label>
+    <input id="fPass" type="password" autocomplete="current-password">
+    <button id="bLogin">Iniciar sesión</button>
+    <div class="msg" id="mLogin"></div>
+  </div>
+
+  <div class="card">
+    <label for="fLeague">League ID</label><input id="fLeague" inputmode="numeric">
+    <label for="fUser">User ID</label><input id="fUser" inputmode="numeric">
+    <label for="fVer">Versión</label><input id="fVer" inputmode="numeric">
+    <button class="sec" id="bVerify" style="width:100%;margin-top:12px;padding:11px">Verificar conexión</button>
+    <div class="msg" id="mVerify"></div>
+    <div class="note" style="margin-top:10px">Se capturan una sola vez desde el navegador: F12 → Red → filtro <b>user</b> → recarga → cabeceras <b>X-League</b>, <b>X-User</b>, <b>X-Version</b>.</div>
+  </div>
+
+  <span class="lbl">Archivo local</span>
+  <div class="card">
+    <div class="note" id="archNote">—</div>
+    <button class="sec" id="bArchive" style="width:100%;margin-top:12px;padding:11px">Archivar histórico completo</button>
+    <div class="msg" id="mArchive"></div>
+    <div class="note" style="margin-top:10px">Recorre el tablón entero hacia atrás y lo guarda en este móvil. Cuanto más histórico, mejores son los perfiles de pujador. Hazlo una vez.</div>
+    <details>
+      <summary>Depuración</summary>
+      <pre id="dbg">—</pre>
+    </details>
+  </div>
+</section>
+
+</main>
+
+<nav>
+  <button id="nMercado" class="on"><i>⚡</i>Mercado</button>
+  <button id="nRivales"><i>🕵</i>Rivales</button>
+  <button id="nClausulas"><i>🔓</i>Cláusulas</button>
+  <button id="nHistorial"><i>📜</i>Historial</button>
+  <button id="nStats"><i>📊</i>Stats</button>
+</nav>
+
+<script>
+/* ============================================================
+   CONSTANTES Y ESTADO
+   ============================================================ */
+const $ = id => document.getElementById(id);
+const K_CFG='bw_cfg_v2', K_ARCH='bw_archive_v2', K_SNAP='bw_snapshots_v2', K_TEAMSNAP='bw_teamsnap_v2', K_PRED='bw_preds_v2';
+
+// Candidatos de URL de foto de jugador. La app los prueba en orden hasta que uno cargue.
+// El avatar de manager sí lo da la API (icon: "i/u/123.png"), de ahí deducimos "i/p/" para jugadores.
+const CDN='https://cdn.biwenger.com/';
+const IMG_CANDIDATES=[
+  id=>CDN+'cdn-cgi/image/f=avif,h=80/i/p/'+id+'.png',
+  id=>CDN+'i/p/'+id+'.png',
+  id=>CDN+'cdn-cgi/image/f=avif,h=80/img/p/'+id+'.png',
+  id=>CDN+'img/p/'+id+'.png',
+  id=>CDN+'cdn-cgi/image/f=avif,h=80/img/players/'+id+'.png',
+];
+let IMG_OK=null; // índice del patrón que funcionó; se recuerda para el resto de la sesión
+const IMG_PLAYER=(id,i=0)=>IMG_CANDIDATES[IMG_OK??i](id);
+const IMG_USER  = icon => icon ? CDN+'cdn-cgi/image/f=avif,h=80/'+icon : '';
+
+// Handlers globales para la cadena de fallback de imágenes
+window.imgOk=function(el){ if(IMG_OK==null) IMG_OK=Number(el.dataset.i); };
+window.imgFail=function(el){
+  const next=Number(el.dataset.i)+1, pid=el.dataset.pid;
+  if(next<IMG_CANDIDATES.length){ el.dataset.i=next; el.src=IMG_CANDIDATES[next](pid); }
+  else { el.outerHTML='<div class="face">'+(el.dataset.ini||'?')+'</div>'; }
+};
+
+const POS={1:'PT',2:'DF',3:'MC',4:'DL'};
+const POS_LONG={1:'Portero',2:'Defensa',3:'Centrocampista',4:'Delantero'};
+const SQUAD_TARGET={1:2,2:5,3:5,4:3};      // plantilla tipo, para detectar huecos
+const INITIAL_BALANCE=20000000;             // reparto del reinicio de liga
+const BID_HEADROOM=0.25;                    // techo = saldo + 25% del valor de plantilla
+const SNAP_KEEP_DAYS=90;
+
+let cfg={}, allPlayers={}, teams=[], balances={}, squads={}, market=[], profiles={}, clMode='atk';
+
+/* ============================================================
+   ALMACENAMIENTO
+   ============================================================ */
+const jget=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch{return d}};
+const jset=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){console.warn('LS lleno',e)}};
+
+const loadCfg=()=>jget(K_CFG,{});
+const saveCfg=()=>jset(K_CFG,cfg);
+const loadArch=()=>jget(K_ARCH,{events:[]});
+const saveArch=a=>jset(K_ARCH,a);
+
+function mergeEvents(list){
+  const a=loadArch(), seen=new Set(a.events.map(e=>e.date+'|'+e.type));
+  let n=0;
+  list.forEach(e=>{const k=e.date+'|'+e.type; if(!seen.has(k)){a.events.push(e);seen.add(k);n++}});
+  a.events.sort((x,y)=>y.date-x.date); saveArch(a); return n;
+}
+const today=()=>new Date().toISOString().slice(0,10);
+
+function saveSnapshot(){
+  const snaps=jget(K_SNAP,{}), d=today();
+  if(snaps[d]) return;
+  const row={};
+  Object.values(allPlayers).forEach(p=>{ if(p&&p.id&&p.price) row[p.id]=p.price; });
+  if(!Object.keys(row).length) return;
+  snaps[d]=row;
+  const keep=Object.keys(snaps).sort().slice(-SNAP_KEEP_DAYS);
+  const out={}; keep.forEach(k=>out[k]=snaps[k]);
+  jset(K_SNAP,out);
+}
+function saveTeamSnapshot(){
+  const s=jget(K_TEAMSNAP,{}), d=today(); const row={};
+  teams.forEach(t=>row[t.id]={b:balances[t.id]??null,v:t.teamValue,n:t.teamSize});
+  s[d]=row;
+  const keep=Object.keys(s).sort().slice(-SNAP_KEEP_DAYS);
+  const out={}; keep.forEach(k=>out[k]=s[k]); jset(K_TEAMSNAP,out);
+}
+function snapNDaysAgo(n){
+  const snaps=jget(K_SNAP,{}), keys=Object.keys(snaps).sort();
+  if(!keys.length) return null;
+  const target=new Date(Date.now()-n*864e5).toISOString().slice(0,10);
+  const older=keys.filter(k=>k<=target);
+  return older.length?snaps[older[older.length-1]]:null;
+}
+function teamSnapNDaysAgo(n){
+  const s=jget(K_TEAMSNAP,{}), keys=Object.keys(s).sort();
+  if(!keys.length) return null;
+  const target=new Date(Date.now()-n*864e5).toISOString().slice(0,10);
+  const older=keys.filter(k=>k<=target);
+  return older.length?s[older[older.length-1]]:null;
+}
+
+/* ============================================================
+   UTILIDADES
+   ============================================================ */
+const eur=n=>n==null?'—':Number(n).toLocaleString('es-ES')+' €';
+const meur=n=>n==null?'—':(n/1e6).toFixed(2).replace('.',',')+'M';
+const pct=n=>(n>=0?'+':'')+(n*100).toFixed(1).replace('.',',')+'%';
+function dig(o,paths){for(const p of paths){let c=o;for(const k of p.split('.')){if(c==null)break;c=c[k]}if(c!=null)return c}return null}
+function esc(s){return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function daysSince(ts){return ts?Math.floor((Date.now()/1000-ts)/86400):null}
+function initials(n){return String(n||'?').trim().slice(0,2).toUpperCase()}
+
+function faceHTML(pid,name){
+  const i=IMG_OK??0;
+  return '<img class="face" src="'+IMG_PLAYER(pid,i)+'" alt="" loading="lazy" '+
+    'data-i="'+i+'" data-pid="'+pid+'" data-ini="'+esc(initials(name))+'" '+
+    'onload="imgOk(this)" onerror="imgFail(this)">';
+}
+function userFaceHTML(icon,name){
+  return icon?'<img class="face" src="'+IMG_USER(icon)+'" alt="" onerror="this.outerHTML=\'<div class=&quot;face&quot;>'+esc(initials(name))+'</div>\'">'
+             :'<div class="face">'+esc(initials(name))+'</div>';
+}
+const posBadge=p=>'<span class="pos p'+(p||0)+'">'+(POS[p]||'?')+'</span>';
+
+/* ============================================================
+   RED
+   ============================================================ */
+const H=()=>({'Authorization':'Bearer '+cfg.token,'X-League':cfg.leagueId,'X-User':cfg.userId,'X-Version':cfg.version,'X-Lang':'es'});
+async function api(path){const r=await fetch(cfg.workerUrl+path,{headers:H()});return r.json()}
+async function apiCF(path){const r=await fetch(cfg.workerUrl+path);return r.json()}
+
+async function ensurePlayers(){
+  if(Object.keys(allPlayers).length) return;
+  const d=await apiCF('/cf/api/v2/competitions/la-liga/data?lang=es&score=2');
+  allPlayers=dig(d,['data.players','players'])||{};
+  Object.entries(allPlayers).forEach(([k,v])=>{if(v&&v.id==null)v.id=Number(k)});
+  saveSnapshot();
+}
+
+/* ============================================================
+   MÉTRICAS DE JUGADOR
+   ============================================================ */
+function momentum(pid){
+  const now=allPlayers[pid]?.price;
+  if(!now) return null;
+  const s7=snapNDaysAgo(7), s30=snapNDaysAgo(30), s3=snapNDaysAgo(3);
+  const d7 = s7&&s7[pid] ? (now-s7[pid])/s7[pid] : null;
+  const d30= s30&&s30[pid]? (now-s30[pid])/s30[pid] : null;
+  const d3 = s3&&s3[pid] ? (now-s3[pid])/s3[pid] : null;
+  // deceleración: ritmo diario reciente vs ritmo diario de 7 días
+  let decel=null;
+  if(d7!=null&&d3!=null&&d7>0){ const r7=d7/7, r3=d3/3; decel=r7!==0?(r3-r7)/Math.abs(r7):null; }
+  return {d7,d30,d3,decel};
+}
+function momentumTag(pid){
+  const m=momentum(pid); if(!m||m.d7==null) return '';
+  const cls=m.d7>0.01?'up':m.d7<-0.01?'dn':'';
+  let t='<span class="tag '+cls+'">'+pct(m.d7)+' 7d</span>';
+  if(m.decel!=null&&m.d7>0.02&&m.decel<-0.4) t+=' <span class="tag hot">frenando</span>';
+  return t;
+}
+// nº de veces que el jugador ha cambiado de manos en la liga
+function liquidity(pid){
+  const a=loadArch().events; let n=0;
+  a.forEach(ev=>{ if(ev.type!=='transfer'&&ev.type!=='market')return;
+    (ev.content||[]).forEach(it=>{ if(it.player===pid) n++; }); });
+  return n;
+}
+
+/* ============================================================
+   PERFILES DE PUJADOR  (a partir del archivo del tablón)
+   ============================================================ */
+function buildProfiles(){
+  const a=loadArch().events, P={};
+  const ensure=(id,name,icon)=>{ if(!P[id]) P[id]={id,name,icon,bids:[],wins:0,seen:0,rounds:0,snipes:0,posBuys:{},paid:0,paidRef:0}; 
+    if(name)P[id].name=name; if(icon)P[id].icon=icon; return P[id] };
+  let auctions=0;
+
+  a.forEach(ev=>{
+    if(ev.type==='market'){
+      (ev.content||[]).forEach(it=>{
+        auctions++;
+        const ref=allPlayers[it.player]?.price||null;
+        const participants=new Set();
+        if(it.to){ const u=ensure(it.to.id,it.to.name,it.to.icon);
+          u.wins++; u.bids.push(it.amount); participants.add(it.to.id);
+          const pos=allPlayers[it.player]?.position; if(pos)u.posBuys[pos]=(u.posBuys[pos]||0)+1;
+          if(ref){u.paid+=it.amount;u.paidRef+=ref}
+          if(it.amount%100000===0)u.rounds++; else{const r=it.amount%1000; if(r>0&&r<100)u.snipes++}
+        }
+        (it.bids||[]).forEach(b=>{ if(!b.user)return;
+          const u=ensure(b.user.id,b.user.name,b.user.icon);
+          u.bids.push(b.amount); participants.add(b.user.id);
+          if(ref){u.paid+=b.amount;u.paidRef+=ref}
+          if(b.amount%100000===0)u.rounds++; else{const r=b.amount%1000; if(r>0&&r<100)u.snipes++}
+        });
+        participants.forEach(id=>P[id].seen++);
+      });
+    }
+    if(ev.type==='transfer'){
+      (ev.content||[]).forEach(it=>{
+        if(it.to){const u=ensure(it.to.id,it.to.name,it.to.icon);
+          const pos=allPlayers[it.player]?.position; if(pos)u.posBuys[pos]=(u.posBuys[pos]||0)+1;}
+      });
+    }
+  });
+
+  Object.values(P).forEach(u=>{
+    u.auctions=auctions;
+    u.partRate=auctions?u.seen/auctions:0;
+    u.mult=u.paidRef>0?u.paid/u.paidRef:null;     // multiplicador medio sobre valor actual
+    u.n=u.bids.length;
+    const styled=u.rounds+u.snipes;
+    u.sniper=styled?u.snipes/styled:null;
+  });
+  profiles=P; return P;
+}
+function leagueMult(){
+  const v=Object.values(profiles).map(p=>p.mult).filter(m=>m!=null&&m>0.2&&m<6);
+  return v.length?v.reduce((a,b)=>a+b,0)/v.length:1.15;
+}
+
+/* ============================================================
+   ECONOMÍA DE RIVALES
+   ============================================================ */
+function computeBalances(){
+  const b={}; teams.forEach(t=>b[t.id]=INITIAL_BALANCE);
+  const evs=[...loadArch().events].sort((x,y)=>y.date-x.date);
+  let reset=false;
+  for(const ev of evs){
+    if(ev.type==='leagueReset'){reset=true;break}
+    if(ev.type!=='transfer'&&ev.type!=='market')continue;
+    (ev.content||[]).forEach(it=>{
+      if(it.amount==null)return;
+      if(it.from&&b[it.from.id]!=null)b[it.from.id]+=it.amount;
+      if(it.to  &&b[it.to.id]  !=null)b[it.to.id]  -=it.amount;
+    });
+  }
+  balances=b; return {complete:reset};
+}
+const ceiling=t=>(balances[t.id]??0)+Math.round((t.teamValue||0)*BID_HEADROOM);
+
+function needs(t){
+  const sq=squads[t.id]; if(!sq) return null;
+  const have={1:0,2:0,3:0,4:0}; sq.forEach(p=>{if(have[p.position]!=null)have[p.position]++});
+  const gap={}; Object.keys(SQUAD_TARGET).forEach(k=>{const d=SQUAD_TARGET[k]-have[k]; if(d>0)gap[k]=d});
+  return {have,gap,total:Object.values(gap).reduce((a,b)=>a+b,0)};
+}
+// acumulación: variación de saldo y de tamaño de plantilla en N días
+function accumulation(teamId,n=5){
+  const old=teamSnapNDaysAgo(n); if(!old||!old[teamId])return null;
+  const o=old[teamId], nowB=balances[teamId], t=teams.find(x=>x.id===teamId);
+  if(o.b==null||nowB==null)return null;
+  return {dBal:nowB-o.b,dSize:(t?.teamSize??0)-(o.n??0),days:n};
+}
+
+/* ============================================================
+   MOTOR DE SUBASTA
+   ============================================================ */
+// Banda cualitativa: lo que de verdad se puede afirmar con estos datos
+function band(p){
+  if(p<0.35) return {t:'Difícil',c:'dn'};
+  if(p<0.55) return {t:'Disputado',c:'hot'};
+  if(p<0.78) return {t:'Probable',c:''};
+  return {t:'Muy probable',c:'up'};
+}
+// Confianza: cuánto respaldo empírico tiene la estimación
+function confidence(bs){
+  const auctions=Object.values(profiles)[0]?.auctions||0;
+  const withData=bs.filter(b=>b.n>=3).length;
+  const share=bs.length?withData/bs.length:0;
+  if(auctions>=25&&share>=0.6) return {t:'alta',n:3};
+  if(auctions>=10&&share>=0.3) return {t:'media',n:2};
+  return {t:'baja',n:1};
+}
+// CDF logística: probabilidad de que la puja del rival sea menor que x
+function cdf(x,mu,sigmaRel){ if(!mu||mu<=0)return 1; const s=Math.max(mu*sigmaRel,1); return 1/(1+Math.exp(-(x-mu)/s)); }
+
+function bidders(pid,price){
+  const out=[];
+  teams.forEach(t=>{
+    if(String(t.id)===String(cfg.userId))return;
+    const cap=ceiling(t); if(cap<price)return;                       // no puede pagarlo
+    const pr=profiles[t.id];
+    const mult=(pr&&pr.mult)?pr.mult:leagueMult();
+    const nd=needs(t);
+    const pos=allPlayers[pid]?.position;
+    const needsPos=nd&&pos&&nd.gap[pos]?true:false;
+    const dAcc=daysSince(t.lastAccess);
+    const active=dAcc==null?true:dAcc<=3;
+    // puja esperada: multiplicador propio, ajustado por necesidad y actividad
+    let mu=price*mult*(needsPos?1.10:1)*(active?1:0.55);
+    mu=Math.min(mu,cap);
+    const partRate=pr?Math.max(pr.partRate,0.05):0.35;
+    out.push({team:t,cap,mu,mult,needsPos,active,dAcc,partRate,
+      sniper:pr&&pr.sniper!=null?pr.sniper:null,n:pr?pr.n:0});
+  });
+  return out.sort((a,b)=>b.mu-a.mu);
+}
+function winProb(x,bs){
+  let p=1;
+  bs.forEach(b=>{
+    const pParticipa=b.partRate;
+    const pLeGano=cdf(x,b.mu,0.16);
+    p*= (1-pParticipa) + pParticipa*pLeGano;   // o no puja, o puja y le gano
+  });
+  return p;
+}
+function recommendBid(pid,price,myCeiling){
+  const target=(cfg.target??75)/100;
+  const bs=bidders(pid,price);
+  if(!bs.length) return {bs,rec:price+1,p:0.95,curve:[],alone:true};
+  let rec=null;
+  for(let x=price; x<=price*3; x+=Math.max(price*0.005,1000)){
+    if(winProb(x,bs)>=target){rec=Math.round(x);break}
+  }
+  if(rec==null)rec=Math.round(price*3);
+  // rival top "redondo" → basta superarle por poco
+  const top=bs[0];
+  if(top.sniper!=null&&top.sniper<0.25&&top.mu>price) rec=Math.min(rec,Math.round(top.mu)+1000);
+  if(myCeiling)rec=Math.min(rec,myCeiling);
+  const curve=[1.00,1.10,1.20,1.35,1.50].map(f=>({f,x:Math.round(price*f),p:winProb(price*f,bs)}));
+  return {bs,rec,p:winProb(rec,bs),curve,alone:false,over:rec/price};
+}
+
+/* ============================================================
+   NAVEGACIÓN
+   ============================================================ */
+const SECTIONS=['mercado','rivales','clausulas','historial','stats','ajustes'];
+function show(name){
+  SECTIONS.forEach(s=>{
+    $('s-'+s).classList.toggle('active',s===name);
+    $('n'+s.charAt(0).toUpperCase()+s.slice(1)).classList.toggle('on',s===name);
+  });
+  if(!connected())return;
+  if(name==='mercado')loadMercado();
+  if(name==='rivales')loadRivales();
+  if(name==='clausulas')loadClausulas();
+  if(name==='historial')loadHistorial();
+  if(name==='stats')loadStats();
+}
+SECTIONS.forEach(s=>$('n'+s.charAt(0).toUpperCase()+s.slice(1)).onclick=()=>show(s));
+const connected=()=>!!(cfg.token&&cfg.leagueId&&cfg.userId&&cfg.version);
+
+function pill(){const p=$('pill');
+  if(connected()){p.textContent='conectado';p.className='pill on'}
+  else{p.textContent='sin conectar';p.className='pill'}}
+
+/* ============================================================
+   AJUSTES
+   ============================================================ */
+function hydrate(){
+  cfg=loadCfg();
+  $('fWorker').value=cfg.workerUrl||''; $('fMail').value=cfg.email||'';
+  $('fLeague').value=cfg.leagueId||''; $('fUser').value=cfg.userId||''; $('fVer').value=cfg.version||'';
+  pill(); archNote();
+}
+function archNote(){
+  const a=loadArch(), snaps=Object.keys(jget(K_SNAP,{})).length;
+  const hasReset=a.events.some(e=>e.type==='leagueReset');
+  const cal=calibration();
+  $('archNote').innerHTML='<b>'+a.events.length+'</b> eventos archivados · <b>'+snaps+'</b> días de precios guardados'+
+    (hasReset?' · reinicio de liga localizado ✓':' · <span style="color:#b3202b">falta el reinicio de liga</span>')+
+    (cal.tot?'<br><br><b>Calibración:</b> de '+cal.tot+' subastas predichas, la puja sugerida habría ganado <b>'+cal.hit+'</b>'+
+      (cal.cheap?' ('+cal.cheap+' pagando de más de un 25% innecesario)':'')+'.'
+     :'<br><br><b>Calibración:</b> aún sin subastas cerradas que comparar. Se irá midiendo sola.');
+}
+
+$('bLogin').onclick=async()=>{
+  const w=$('fWorker').value.trim().replace(/\/$/,''), e=$('fMail').value.trim(), p=$('fPass').value;
+  const m=$('mLogin'); m.className='msg';
+  if(!w||!e||!p){m.className='msg err show';m.textContent='Rellena Worker, email y contraseña.';return}
+  $('bLogin').disabled=true;$('bLogin').textContent='Conectando…';
+  try{
+    const r=await fetch(w+'/as/api/v2/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:e,password:p})});
+    const d=await r.json(); const tok=dig(d,['token','login.token','data.token']);
+    if(!r.ok||typeof tok!=='string'){m.className='msg err show';m.textContent='Sin token: '+JSON.stringify(d).slice(0,180)}
+    else{cfg.workerUrl=w;cfg.email=e;cfg.token=tok;saveCfg();pill();
+      m.className='msg ok show';m.textContent='Sesión iniciada.'}
+  }catch(err){m.className='msg err show';m.textContent='Error de red: '+err.message}
+  $('bLogin').disabled=false;$('bLogin').textContent='Iniciar sesión';
+};
+
+$('bVerify').onclick=async()=>{
+  cfg.leagueId=$('fLeague').value.trim();cfg.userId=$('fUser').value.trim();cfg.version=$('fVer').value.trim();
+  saveCfg();pill();
+  const m=$('mVerify');m.className='msg';
+  if(!cfg.token){m.className='msg err show';m.textContent='Inicia sesión primero.';return}
+  $('bVerify').disabled=true;
+  try{
+    const d=await api('/as/api/v2/user?fields=id,name,balance');
+    const n=dig(d,['data.name','name']);
+    if(n){m.className='msg ok show';m.textContent='Conectado como '+n+'.'}
+    else{m.className='msg err show';m.textContent='Respuesta inesperada: '+JSON.stringify(d).slice(0,180)}
+  }catch(err){m.className='msg err show';m.textContent='Error: '+err.message}
+  $('bVerify').disabled=false;
+};
+
+$('bArchive').onclick=async()=>{
+  const m=$('mArchive');m.className='msg ok show';
+  $('bArchive').disabled=true;
+  let off=0,tot=0,pages=0;
+  try{
+    while(pages<60){
+      m.textContent='Archivando… '+off+' eventos revisados, '+tot+' nuevos.';
+      const d=await api('/as/api/v2/league/'+cfg.leagueId+'/board?offset='+off+'&limit=50');
+      const ev=dig(d,['data'])||[];
+      if(!ev.length)break;
+      tot+=mergeEvents(ev); off+=50; pages++;
+    }
+    m.textContent='Listo. '+tot+' eventos nuevos guardados.';
+  }catch(err){m.className='msg err show';m.textContent='Error: '+err.message}
+  $('bArchive').disabled=false; archNote();
+};
+
+/* ============================================================
+   CARGA BASE (equipos + plantillas + perfiles)
+   ============================================================ */
+let baseLoaded=false;
+async function loadBase(force){
+  if(baseLoaded&&!force)return;
+  await ensurePlayers();
+  const lg=await api('/as/api/v2/league?include=all&fields=*,standings');
+  $('dbg').textContent=JSON.stringify(lg,null,1).slice(0,3000);
+  teams=dig(lg,['data.standings'])||[];
+
+  // asegurar que el archivo llega al reinicio de liga
+  if(!loadArch().events.some(e=>e.type==='leagueReset')){
+    let off=0;
+    while(off<800){
+      const d=await api('/as/api/v2/league/'+cfg.leagueId+'/board?offset='+off+'&limit=50');
+      const ev=dig(d,['data'])||[]; if(!ev.length)break;
+      mergeEvents(ev);
+      if(ev.some(e=>e.type==='leagueReset'))break;
+      off+=50;
+    }
+  }else{
+    const d=await api('/as/api/v2/league/'+cfg.leagueId+'/board?offset=0&limit=50');
+    mergeEvents(dig(d,['data'])||[]);
+  }
+
+  computeBalances();
+  await Promise.all(teams.map(async t=>{
+    if(squads[t.id])return;
+    const u=await api('/as/api/v2/user/'+t.id+'?fields=id,name,players(id,owner)');
+    squads[t.id]=(dig(u,['data.players'])||[]).map(p=>{
+      const i=allPlayers[p.id]||{};
+      return {id:p.id,name:i.name||('#'+p.id),position:i.position||0,team:dig(i,['team.name'])||'',
+        price:i.price||null,clause:dig(p,['owner.clause']),paid:dig(p,['owner.price']),
+        lockedUntil:dig(p,['owner.lockedUntil']),since:dig(p,['owner.date'])};
+    });
+  }));
+  buildProfiles(); saveTeamSnapshot(); archNote();
+  baseLoaded=true;
+}
+
+/* ============================================================
+   MERCADO
+   ============================================================ */
+async function loadMercado(){
+  if(!connected()){show('ajustes');return}
+  $('cNoCfg').style.display='none';
+  $('bMercado').disabled=true;$('bMercado').textContent='…';
+  try{
+    await loadBase();
+    const mk=await api('/as/api/v2/market');
+    const bal=dig(mk,['data.status.balance']);
+    const maxBid=dig(mk,['data.maximumBid']) ?? dig(mk,['data.status.maximumBid']);
+    market=(dig(mk,['data.sales'])||[]).map(s=>({
+      id:dig(s,['player.id']),price:s.price,seller:dig(s,['user.name']),
+      sellerId:dig(s,['user.id']),until:s.until,
+      clause:dig(s,['player.owner.clause'])
+    })).filter(x=>x.id);
+
+    renderMercado(bal,maxBid);
+  }catch(err){
+    $('mktWrap').innerHTML='';
+    $('cMktEmpty').style.display='block';$('mktEmptyTxt').textContent='Error: '+err.message;
+  }
+  $('bMercado').disabled=false;$('bMercado').textContent='Actualizar';
+}
+
+function renderMercado(bal,maxBid){
+  const me=teams.find(t=>String(t.id)===String(cfg.userId));
+  const myCeil=maxBid ?? (me?ceiling(me):null);
+  let html='<div class="card"><div class="kpis">'+
+    '<div class="kpi"><div class="v">'+meur(bal)+'</div><div class="k">Saldo</div></div>'+
+    '<div class="kpi"><div class="v">'+meur(myCeil)+'</div><div class="k">Tu techo</div></div>'+
+    '<div class="kpi"><div class="v">'+market.length+'</div><div class="k">En venta</div></div>'+
+    '</div>'+
+    '<div class="note" style="margin-top:10px">Objetivo de victoria — cuánta certeza quieres comprar:</div>'+
+    '<div class="chips" style="margin:8px 0 0" id="tgChips">'+
+      [55,70,85].map(v=>'<div class="chip'+((cfg.target??75)===v?' on':'')+'" data-tg="'+v+'">'+v+'%</div>').join('')+
+      '<div class="chip'+((cfg.target??75)===75?' on':'')+'" data-tg="75">75%</div>'+
+    '</div>'+
+    '<div class="note" style="margin-top:8px">Aviso si la puja supera el valor en más de '+
+      '<b id="ovVal">'+(cfg.overMax??140)+'%</b> · '+
+      '<span id="ovDown" style="cursor:pointer;text-decoration:underline">−10</span> '+
+      '<span id="ovUp" style="cursor:pointer;text-decoration:underline">+10</span></div>'+
+    '</div>';
+
+  if(!market.length){
+    $('mktWrap').innerHTML=html;
+    $('cMktEmpty').style.display='block';$('mktEmptyTxt').textContent='No hay subastas abiertas ahora mismo.';
+    return;
+  }
+  $('cMktEmpty').style.display='none';
+
+  // ordenar por "oportunidad": pocos rivales creíbles y buen momentum
+  const rows=market.map(m=>{
+    const r=recommendBid(m.id,m.price,myCeil);
+    return {...m,...r};
+  }).sort((a,b)=>a.bs.length-b.bs.length||b.price-a.price);
+
+  rows.forEach(m=>{
+    const p=allPlayers[m.id]||{};
+    const liq=liquidity(m.id);
+    const affordable=myCeil==null||m.rec<=myCeil;
+    const bd=band(m.p), cf2=confidence(m.bs);
+    const overTh=(cfg.overMax??140)/100;
+    const tooMuch=m.over&&m.over>overTh;
+    html+='<div class="card">'+
+      '<div class="plr" style="border:none;padding-top:0">'+
+        faceHTML(m.id,p.name)+
+        '<div class="mid"><div class="nm">'+esc(p.name||('#'+m.id))+'</div>'+
+        '<div class="sb">'+posBadge(p.position)+esc(dig(p,['team.name'])||'')+
+          (m.seller?' · vende <b>'+esc(m.seller)+'</b>':' · <b>mercado libre</b>')+
+          ' '+momentumTag(m.id)+(liq>1?' <span class="tag">rota mucho ('+liq+')</span>':'')+
+        '</div></div>'+
+        '<div class="rt"><div class="eur">'+meur(m.price)+'</div>'+
+        '<div class="sub2">'+(p.points||0)+' pts</div></div>'+
+      '</div>'+
+      '<div class="kpis">'+
+        '<div class="kpi"><div class="v" style="color:'+(affordable&&!tooMuch?'var(--red)':'var(--muted)')+'">'+meur(m.rec)+'</div><div class="k">Puja sugerida</div></div>'+
+        '<div class="kpi"><div class="v" style="font-size:.74rem">'+bd.t+'</div><div class="k">'+Math.round(m.p*100)+'% · conf. '+cf2.t+'</div></div>'+
+        '<div class="kpi"><div class="v">'+m.bs.length+'</div><div class="k">Rivales</div></div>'+
+      '</div>'+
+      (tooMuch?'<div class="note" style="margin-top:8px;color:#b3202b"><b>⚠ '+pct(m.over-1)+' sobre su valor.</b> Para llegar a tu objetivo del '+(cfg.target??75)+'% hay que sobrepagar. Considera bajar el objetivo o dejarlo pasar.</div>':'');
+
+    if(m.alone){
+      html+='<div class="note" style="margin-top:8px">Nadie más puede pagarlo ahora mismo. Puja mínima y listo.</div>';
+    }else{
+      html+='<details><summary>Ver quién puede pujar y curva de probabilidad</summary><div style="margin-top:8px">';
+      m.bs.slice(0,6).forEach(b=>{
+        const st=b.sniper==null?'':(b.sniper>0.5?'francotirador':'redondo');
+        html+='<div class="bidrow"><span>'+
+          '<span class="dot '+(b.dAcc==null?'g':b.dAcc<=1?'g':b.dAcc<=3?'y':'r')+'"></span> '+
+          esc(b.team.name)+(b.needsPos?' <span class="tag hot">necesita '+POS[allPlayers[m.id]?.position]+'</span>':'')+
+          (st?' <span class="tag">'+st+'</span>':'')+
+          '</span><b>~'+meur(b.mu)+'</b></div>';
+      });
+      html+='<div class="bar"><i style="width:'+Math.round(m.p*100)+'%"></i></div>';
+      html+='<div style="margin-top:8px">';
+      m.curve.forEach(c=>{const b2=band(c.p);
+        html+='<div class="bidrow"><span>'+meur(c.x)+' ('+c.f.toFixed(2).replace('.',',')+'×)</span>'+
+        '<b><span class="tag '+b2.c+'">'+b2.t+'</span> '+Math.round(c.p*100)+'%</b></div>'});
+      html+='</div></div></details>';
+    }
+    html+='</div>';
+  });
+  $('mktWrap').innerHTML=html;
+
+  // controles de objetivo / umbral
+  document.querySelectorAll('#tgChips .chip').forEach(c=>c.onclick=()=>{
+    cfg.target=Number(c.dataset.tg); saveCfg(); renderMercado(bal,maxBid);
+  });
+  $('ovUp').onclick=()=>{cfg.overMax=Math.min((cfg.overMax??140)+10,300);saveCfg();renderMercado(bal,maxBid)};
+  $('ovDown').onclick=()=>{cfg.overMax=Math.max((cfg.overMax??140)-10,100);saveCfg();renderMercado(bal,maxBid)};
+
+  // registrar predicciones para poder calibrar después contra el resultado real
+  const preds=jget(K_PRED,{});
+  rows.forEach(m=>{
+    if(!preds[m.id]) preds[m.id]={price:m.price,rec:m.rec,p:m.p,date:Math.floor(Date.now()/1000)};
+  });
+  jset(K_PRED,preds);
+}
+
+/* Calibración: compara predicciones guardadas con el resultado real de la subasta */
+function calibration(){
+  const preds=jget(K_PRED,{}), evs=loadArch().events; let hit=0,tot=0,cheap=0;
+  evs.forEach(ev=>{ if(ev.type!=='market')return;
+    (ev.content||[]).forEach(it=>{
+      const pr=preds[it.player];
+      if(!pr||!it.amount||ev.date<pr.date)return;
+      tot++;
+      if(pr.rec>=it.amount)hit++;                    // mi puja sugerida habría ganado
+      if(pr.rec>=it.amount*1.25)cheap++;             // ...y por bastante de más
+    });
+  });
+  return {tot,hit,cheap,rate:tot?hit/tot:null};
+}
+
+/* ============================================================
+   RIVALES
+   ============================================================ */
+async function loadRivales(){
+  if(!connected()){show('ajustes');return}
+  $('bRivales').disabled=true;$('bRivales').textContent='…';
+  $('spyNote').textContent='Calculando…';
+  try{
+    await loadBase(true);
+    const {complete}=computeBalances();
+    const nAuc=Object.values(profiles)[0]?.auctions||0;
+    $('spyNote').innerHTML=(complete?'Saldos calculados desde el reinicio de liga.':'<b style="color:#b3202b">No se ha localizado el reinicio de liga</b> — usa «Archivar histórico completo» en Ajustes.')+
+      ' Perfiles construidos sobre <b>'+nAuc+'</b> subastas archivadas.'+
+      (nAuc<12?' Muestra pequeña: tómalos como orientativos.':'');
+    renderRivales();
+  }catch(err){$('spyNote').textContent='Error: '+err.message}
+  $('bRivales').disabled=false;$('bRivales').textContent='Actualizar';
+}
+function renderRivales(){
+  const sorted=[...teams].sort((a,b)=>ceiling(b)-ceiling(a));
+  let html='';
+  sorted.forEach(t=>{
+    const me=String(t.id)===String(cfg.userId);
+    const pr=profiles[t.id]||{}, nd=needs(t), acc=accumulation(t.id), d=daysSince(t.lastAccess);
+    const dotc=d==null?'g':d<=1?'g':d<=3?'y':'r';
+    const gapTxt=nd&&nd.total?Object.entries(nd.gap).map(([k,v])=>v+' '+POS[k]).join(', '):'plantilla completa';
+    const styleTxt=pr.sniper==null?'sin datos':(pr.sniper>0.5?'francotirador (+1 €)':'pujador redondo');
+    html+='<div class="card">'+
+      '<div class="plr" style="border:none;padding-top:0">'+
+        userFaceHTML(t.icon,t.name)+
+        '<div class="mid"><div class="nm">'+esc(t.name)+(me?' <span class="tag dark">tú</span>':'')+'</div>'+
+        '<div class="sb"><span class="dot '+dotc+'"></span>'+(d==null?'activo':d===0?'hoy':'hace '+d+' d')+
+        ' · '+t.teamSize+' jug. · '+meur(t.teamValue)+'</div></div>'+
+        '<div class="rt"><div class="eur">'+meur(balances[t.id])+'</div><div class="sub2">techo '+meur(ceiling(t))+'</div></div>'+
+      '</div>'+
+      '<div class="kpis">'+
+        '<div class="kpi"><div class="v">'+(pr.mult?pr.mult.toFixed(2).replace('.',',')+'×':'—')+'</div><div class="k">Paga sobre valor</div></div>'+
+        '<div class="kpi"><div class="v">'+(pr.partRate!=null?Math.round(pr.partRate*100)+'%':'—')+'</div><div class="k">Participa</div></div>'+
+        '<div class="kpi"><div class="v" style="font-size:.72rem">'+styleTxt.split(' ')[0]+'</div><div class="k">Estilo</div></div>'+
+      '</div>'+
+      '<div class="note" style="margin-top:8px">Necesita: <b>'+gapTxt+'</b>'+
+        (nd&&nd.total?' · '+meur(Math.floor((balances[t.id]||0)/nd.total))+' por hueco':'')+
+        (acc&&acc.dBal>500000&&acc.dSize<=0?' · <span class="tag hot">acumulando '+meur(acc.dBal)+' en '+acc.days+'d</span>':'')+
+      '</div>'+
+      '<div class="btn-squad" data-sq="'+t.id+'"><span>Ver plantilla · '+(squads[t.id]?.length||0)+' jugadores</span><span class="arw">▼</span></div>'+
+      '<div id="sq-'+t.id+'" style="display:none;margin-top:4px">'+renderSquad(squads[t.id]||[])+'</div>'+
+    '</div>';
+  });
+  $('spyWrap').innerHTML=html;
+  document.querySelectorAll('.btn-squad').forEach(b=>b.onclick=()=>{
+    const box=$('sq-'+b.dataset.sq), open=box.style.display!=='none';
+    box.style.display=open?'none':'block';
+    b.classList.toggle('open',!open);
+    b.querySelector('span').textContent=(open?'Ver':'Ocultar')+' plantilla \u00b7 '+(squads[b.dataset.sq]?.length||0)+' jugadores';
+  });
+}
+function renderSquad(sq){
+  if(!sq.length)return '<div class="empty">Sin datos.</div>';
+  return [...sq].sort((a,b)=>(a.position||9)-(b.position||9)).map(p=>{
+    const gain=p.paid&&p.price?(p.price-p.paid)/p.paid:null;
+    return '<div class="plr">'+faceHTML(p.id,p.name)+
+      '<div class="mid"><div class="nm">'+esc(p.name)+'</div>'+
+      '<div class="sb">'+posBadge(p.position)+esc(p.team)+' '+momentumTag(p.id)+
+      (gain!=null?' <span class="tag '+(gain>0?'up':'dn')+'">'+pct(gain)+' desde compra</span>':'')+'</div></div>'+
+      '<div class="rt"><div class="eur">'+meur(p.price)+'</div>'+
+      '<div class="sub2">cl. '+meur(p.clause)+'</div></div></div>';
+  }).join('');
+}
+
+/* ============================================================
+   CLÁUSULAS
+   ============================================================ */
+document.querySelectorAll('#clChips .chip').forEach(c=>c.onclick=()=>{
+  document.querySelectorAll('#clChips .chip').forEach(x=>x.classList.remove('on'));
+  c.classList.add('on'); clMode=c.dataset.cl; renderClausulas();
+});
+async function loadClausulas(){
+  if(!connected()){show('ajustes');return}
+  $('bClaus').disabled=true;$('bClaus').textContent='…';
+  try{ await loadBase(); computeBalances(); renderClausulas(); }
+  catch(err){$('clNote').textContent='Error: '+err.message}
+  $('bClaus').disabled=false;$('bClaus').textContent='Calcular';
+}
+function renderClausulas(){
+  const now=Math.floor(Date.now()/1000);
+  const me=teams.find(t=>String(t.id)===String(cfg.userId));
+  const myCeil=me?ceiling(me):0;
+  let rows=[];
+
+  if(clMode==='atk'){
+    teams.forEach(t=>{
+      if(String(t.id)===String(cfg.userId))return;
+      (squads[t.id]||[]).forEach(p=>{
+        if(!p.clause||!p.price)return;
+        const margin=p.price-p.clause;
+        const locked=p.lockedUntil&&p.lockedUntil>now;
+        rows.push({...p,owner:t.name,ownerId:t.id,margin,ratio:p.clause/p.price,locked,
+          canPay:myCeil>=p.clause});
+      });
+    });
+    rows=rows.filter(r=>r.ratio<1.35).sort((a,b)=>a.ratio-b.ratio).slice(0,40);
+    $('clNote').innerHTML='Jugadores rivales cuya cláusula está más cerca (o por debajo) de su valor real. '+
+      'Tu techo de cláusula: <b>'+meur(myCeil)+'</b>.';
+  }else{
+    (squads[cfg.userId]||[]).forEach(p=>{
+      if(!p.clause||!p.price)return;
+      const margin=p.price-p.clause;
+      const locked=p.lockedUntil&&p.lockedUntil>now;
+      const threats=teams.filter(t=>String(t.id)!==String(cfg.userId)&&ceiling(t)>=p.clause)
+        .map(t=>({name:t.name,d:daysSince(t.lastAccess)}));
+      const live=threats.filter(t=>t.d==null||t.d<=3);
+      rows.push({...p,margin,ratio:p.clause/p.price,locked,threats,live});
+    });
+    rows=rows.sort((a,b)=>a.ratio-b.ratio);
+    const risky=rows.filter(r=>!r.locked&&r.ratio<1.2&&r.live.length);
+    $('clNote').innerHTML='<b>'+risky.length+'</b> jugadores tuyos en riesgo real (cláusula baja, sin bloquear y con rivales que pueden pagarla y están activos).';
+  }
+
+  if(!rows.length){$('clWrap').innerHTML='<div class="card"><div class="empty">Sin datos todavía. Pulsa «Calcular».</div></div>';return}
+
+  $('clWrap').innerHTML=rows.map(r=>{
+    const good=r.ratio<1;
+    const tagR=good?'<span class="tag up">bajo valor</span>':'<span class="tag">'+r.ratio.toFixed(2).replace('.',',')+'× valor</span>';
+    let extra='';
+    if(clMode==='atk'){
+      extra='<div class="note" style="margin-top:6px">De <b>'+esc(r.owner)+'</b>'+
+        (r.locked?' · <span class="tag dn">bloqueada</span>':'')+
+        (r.canPay?'':' · <span class="tag dn">fuera de tu alcance</span>')+'</div>';
+    }else{
+      extra='<div class="note" style="margin-top:6px">'+
+        (r.locked?'<span class="tag up">bloqueada</span> ':'')+
+        '<b>'+r.live.length+'</b> rivales activos pueden pagarla'+
+        (r.live.length?': '+esc(r.live.slice(0,3).map(t=>t.name).join(', ')):'')+'</div>';
+    }
+    return '<div class="card"><div class="plr" style="border:none;padding:0">'+
+      faceHTML(r.id,r.name)+
+      '<div class="mid"><div class="nm">'+esc(r.name)+'</div>'+
+      '<div class="sb">'+posBadge(r.position)+esc(r.team)+' '+tagR+' '+momentumTag(r.id)+'</div></div>'+
+      '<div class="rt"><div class="eur">'+meur(r.clause)+'</div><div class="sub2">vale '+meur(r.price)+'</div></div>'+
+      '</div>'+extra+'</div>';
+  }).join('');
+}
+
+/* ============================================================
+   HISTORIAL
+   ============================================================ */
+async function loadHistorial(){
+  if(!connected()){show('ajustes');return}
+  $('bHist').disabled=true;$('bHist').textContent='…';
+  try{
+    await ensurePlayers();
+    const d=await api('/as/api/v2/league/'+cfg.leagueId+'/board?offset=0&limit=30');
+    const n=mergeEvents(dig(d,['data'])||[]);
+    const a=loadArch();
+    $('histNote').innerHTML=(n?'<b>'+n+'</b> nuevos · ':'')+'<b>'+a.events.length+'</b> eventos en el archivo local.';
+    const rows=[];
+    a.events.forEach(ev=>{
+      if(ev.type!=='transfer'&&ev.type!=='market')return;
+      (ev.content||[]).forEach(it=>{
+        const p=allPlayers[it.player]||{};
+        rows.push({name:p.name||('#'+it.player),id:it.player,pos:p.position,
+          amount:it.amount,from:it.from?.name,to:it.to?.name,date:ev.date,
+          kind:ev.type==='market'?'Puja ganada':(it.from&&it.to?'Traspaso':(it.type==='immediateSale'?'Venta directa':'Al mercado')),
+          bids:it.bids||[]});
+      });
+    });
+    $('histList').innerHTML=rows.slice(0,80).map(r=>{
+      const d2=r.date?new Date(r.date*1000).toLocaleDateString('es-ES'):'';
+      const who=r.from&&r.to?esc(r.from)+' → '+esc(r.to):esc(r.to||r.from||'');
+      const bidTxt=r.bids.length?'<details><summary>'+r.bids.length+' pujas rivales</summary>'+
+        r.bids.map(b=>'<div class="bidrow"><span>'+esc(b.user?.name||'?')+'</span><b>'+meur(b.amount)+'</b></div>').join('')+'</details>':'';
+      return '<div class="plr"><div class="mid"><div class="nm">'+esc(r.name)+'</div>'+
+        '<div class="sb">'+posBadge(r.pos)+r.kind+' · '+who+' · '+d2+'</div>'+bidTxt+'</div>'+
+        '<div class="rt"><div class="eur">'+meur(r.amount)+'</div></div></div>';
+    }).join('')||'<div class="empty">Sin movimientos archivados.</div>';
+  }catch(err){$('histNote').textContent='Error: '+err.message}
+  $('bHist').disabled=false;$('bHist').textContent='Actualizar';
+}
+
+/* ============================================================
+   BUSCADOR ¿QUIÉN TIENE A X?
+   ============================================================ */
+let qTimer;
+$('qSearch').oninput=()=>{clearTimeout(qTimer);qTimer=setTimeout(runSearch,220)};
+function runSearch(){
+  const q=$('qSearch').value.trim().toLowerCase();
+  if(q.length<3){$('qOut').innerHTML='';return}
+  if(!Object.keys(allPlayers).length){$('qOut').innerHTML='<div class="note" style="margin-top:8px">Carga el mercado primero.</div>';return}
+  const hits=Object.values(allPlayers).filter(p=>p&&p.name&&p.name.toLowerCase().includes(q)).slice(0,6);
+  if(!hits.length){$('qOut').innerHTML='<div class="note" style="margin-top:8px">Sin resultados.</div>';return}
+  $('qOut').innerHTML=hits.map(p=>{
+    let owner=null,clause=null;
+    Object.entries(squads).forEach(([tid,sq])=>{
+      const f=sq.find(x=>x.id===p.id);
+      if(f){owner=teams.find(t=>String(t.id)===String(tid))?.name;clause=f.clause}
+    });
+    const inMkt=market.find(m=>m.id===p.id);
+    const st=inMkt?'<span class="tag hot">en subasta ahora · '+meur(inMkt.price)+'</span>'
+      :owner?'<span class="tag dark">'+esc(owner)+'</span> <span class="tag">cl. '+meur(clause)+'</span>'
+      :'<span class="tag up">libre</span>';
+    return '<div class="plr">'+faceHTML(p.id,p.name)+
+      '<div class="mid"><div class="nm">'+esc(p.name)+'</div>'+
+      '<div class="sb">'+posBadge(p.position)+esc(dig(p,['team.name'])||'')+' '+st+'</div></div>'+
+      '<div class="rt"><div class="eur">'+meur(p.price)+'</div></div></div>';
+  }).join('');
+}
+
+
+/* ============================================================
+   ESTADÍSTICAS
+   ============================================================ */
+let stMode='records', ST=null;
+
+document.querySelectorAll('#stChips .chip').forEach(c=>c.onclick=()=>{
+  document.querySelectorAll('#stChips .chip').forEach(x=>x.classList.remove('on'));
+  c.classList.add('on'); stMode=c.dataset.st; renderStats();
+});
+
+function computeStats(){
+  const evs=loadArch().events;
+  const M={};                       // por manager
+  const name={}, icon={};
+  const ensure=id=>{ if(!M[id])M[id]={id,spent:0,earned:0,buys:0,sells:0,bids:0,wins:0,seen:0,
+      overpay:0,overpayN:0,paid:0,paidRef:0,vsPos:{}}; return M[id] };
+  teams.forEach(t=>{name[t.id]=t.name;icon[t.id]=t.icon;ensure(t.id)});
+
+  const auctions=[], h2h={};        // duelos cabeza a cabeza
+  const playerBids={}, playerMoves={};
+
+  evs.forEach(ev=>{
+    if(ev.type==='market'){
+      (ev.content||[]).forEach(it=>{
+        if(!it.to||it.amount==null)return;
+        const others=(it.bids||[]).filter(b=>b.user).map(b=>({id:b.user.id,name:b.user.name,amount:b.amount}));
+        const second=others.length?Math.max(...others.map(o=>o.amount)):null;
+        const over=second!=null?it.amount-second:null;
+        const ref=allPlayers[it.player]?.price||null;
+        auctions.push({player:it.player,winner:it.to.id,winnerName:it.to.name,
+          amount:it.amount,second,over,others,date:ev.date,ref});
+
+        const w=ensure(it.to.id); name[it.to.id]=it.to.name; icon[it.to.id]=it.to.icon;
+        w.wins++; w.seen++; w.bids++; w.buys++; w.spent+=it.amount;
+        if(ref){w.paid+=it.amount;w.paidRef+=ref}
+        if(over!=null){w.overpay+=over;w.overpayN++}
+
+        playerBids[it.player]=(playerBids[it.player]||0)+1+others.length;
+        playerMoves[it.player]=(playerMoves[it.player]||0)+1;
+
+        others.forEach(o=>{
+          const u=ensure(o.id); name[o.id]=o.name; u.bids++; u.seen++;
+          if(ref){u.paid+=o.amount;u.paidRef+=ref}
+          const k=[it.to.id,o.id].sort().join('-');
+          if(!h2h[k])h2h[k]={a:[it.to.id,o.id].sort()[0],b:[it.to.id,o.id].sort()[1],n:0,winsA:0};
+          h2h[k].n++; if(String(it.to.id)===String(h2h[k].a))h2h[k].winsA++;
+        });
+      });
+    }
+    if(ev.type==='transfer'){
+      (ev.content||[]).forEach(it=>{
+        if(it.amount==null)return;
+        if(it.from){const u=ensure(it.from.id);name[it.from.id]=it.from.name;u.earned+=it.amount;u.sells++}
+        if(it.to){const u=ensure(it.to.id);name[it.to.id]=it.to.name;u.spent+=it.amount;u.buys++}
+        playerMoves[it.player]=(playerMoves[it.player]||0)+1;
+      });
+    }
+  });
+
+  Object.values(M).forEach(u=>{
+    u.name=name[u.id]||('#'+u.id); u.icon=icon[u.id];
+    u.winRate=u.bids?u.wins/u.bids:null;
+    u.infl=u.paidRef>0?u.paid/u.paidRef:null;
+    u.avgBuy=u.buys?u.spent/u.buys:null;
+    u.net=u.earned-u.spent;
+  });
+
+  // plusvalías de plantilla
+  const gains=[];
+  Object.entries(squads).forEach(([tid,sq])=>{
+    (sq||[]).forEach(p=>{
+      if(!p.paid||!p.price)return;
+      gains.push({...p,owner:name[tid]||'?',ownerId:tid,delta:p.price-p.paid,pctv:(p.price-p.paid)/p.paid});
+    });
+  });
+
+  const totalCash=teams.reduce((a,t)=>a+(balances[t.id]||0),0);
+  const totalValue=teams.reduce((a,t)=>a+(t.teamValue||0),0);
+  const infl=(()=>{const w=auctions.filter(a=>a.ref);const p=w.reduce((a,x)=>a+x.amount,0),r=w.reduce((a,x)=>a+x.ref,0);return r?p/r:null})();
+
+  ST={M:Object.values(M),auctions,h2h:Object.values(h2h),playerBids,playerMoves,gains,
+      totalCash,totalValue,infl,name,icon};
+  return ST;
+}
+
+function mrow(i,nm,ic,val,sub){
+  return '<div class="podio"><div class="pos-n g'+(i+1)+'">'+(i+1)+'</div>'+
+    userFaceHTML(ic,nm)+'<div class="mid" style="flex:1;min-width:0">'+
+    '<div class="nm">'+esc(nm)+'</div>'+(sub?'<div class="sb">'+sub+'</div>':'')+'</div>'+
+    '<div class="rt"><div class="eur">'+val+'</div></div></div>';
+}
+
+async function loadStats(){
+  if(!connected()){show('ajustes');return}
+  $('bStats').disabled=true;$('bStats').textContent='…';
+  try{ await loadBase(); computeBalances(); computeStats(); renderStats(); }
+  catch(err){ $('stWrap').innerHTML='<div class="card"><div class="empty">Error: '+esc(err.message)+'</div></div>'; }
+  $('bStats').disabled=false;$('bStats').textContent='Calcular';
+}
+
+function renderStats(){
+  if(!ST){$('stWrap').innerHTML='<div class="card"><div class="empty">Pulsa «Calcular».</div></div>';return}
+  const A=ST.auctions;
+  let h='';
+
+  if(!A.length && stMode!=='liga'){
+    $('stWrap').innerHTML='<div class="card"><div class="empty">Todavía no hay subastas archivadas.<br>Usa «Archivar histórico completo» en Ajustes.</div></div>';
+    return;
+  }
+
+  if(stMode==='records'){
+    const cara=[...A].sort((a,b)=>b.amount-a.amount)[0];
+    const tirado=[...A].filter(x=>x.over!=null).sort((a,b)=>b.over-a.over)[0];
+    const ajust=[...A].filter(x=>x.over!=null&&x.over>0).sort((a,b)=>a.over-b.over)[0];
+    const disp=Object.entries(ST.playerBids).sort((a,b)=>b[1]-a[1])[0];
+    const R=(k,v,d)=>'<div class="rec"><div class="rk">'+k+'</div><div class="rv">'+v+'</div><div class="rd">'+d+'</div></div>';
+    if(cara)h+=R('Fichaje más caro',meur(cara.amount),
+      esc(allPlayers[cara.player]?.name||'?')+' \u2192 '+esc(cara.winnerName));
+    if(tirado)h+=R('Dinero tirado a la basura',meur(tirado.over),
+      esc(tirado.winnerName)+' pagó '+meur(tirado.amount)+' por '+esc(allPlayers[tirado.player]?.name||'?')+
+      ' cuando la segunda puja era '+meur(tirado.second)+'.');
+    if(ajust)h+=R('Victoria más ajustada',meur(ajust.over),
+      esc(ajust.winnerName)+' le arrebató '+esc(allPlayers[ajust.player]?.name||'?')+' a '+
+      esc(ajust.others.sort((a,b)=>b.amount-a.amount)[0].name)+' por esa miseria.');
+    if(disp)h+=R('Jugador más disputado',disp[1]+' pujas',
+      esc(allPlayers[disp[0]]?.name||'?')+' es el hombre más deseado de la liga.');
+    const best=[...ST.gains].sort((a,b)=>b.pctv-a.pctv)[0];
+    const worst=[...ST.gains].sort((a,b)=>a.pctv-b.pctv)[0];
+    if(best)h+=R('Mejor fichaje',pct(best.pctv),
+      esc(best.owner)+' compró a '+esc(best.name)+' por '+meur(best.paid)+' y ya vale '+meur(best.price)+'.');
+    if(worst&&worst.pctv<0)h+=R('El pufo de la temporada',pct(worst.pctv),
+      esc(worst.owner)+' pagó '+meur(worst.paid)+' por '+esc(worst.name)+'. Hoy vale '+meur(worst.price)+'.');
+  }
+
+  if(stMode==='managers'){
+    const mk=(title,arr,fmt,sub)=>{
+      if(!arr.length)return'';
+      return '<div class="card"><h3>'+title+'</h3><div style="margin-top:6px">'+
+        arr.slice(0,5).map((u,i)=>mrow(i,u.name,u.icon,fmt(u),sub?sub(u):'')).join('')+'</div></div>';
+    };
+    h+=mk('💸 Más ha gastado',[...ST.M].filter(u=>u.spent).sort((a,b)=>b.spent-a.spent),
+      u=>meur(u.spent),u=>u.buys+' compras · media '+meur(u.avgBuy));
+    h+=mk('🗑️ Más dinero ha tirado de más',[...ST.M].filter(u=>u.overpayN).sort((a,b)=>b.overpay-a.overpay),
+      u=>meur(u.overpay),u=>'sobre la 2ª puja, en '+u.overpayN+' subastas');
+    h+=mk('🎯 Mejor puntería en subastas',[...ST.M].filter(u=>u.bids>=3).sort((a,b)=>b.winRate-a.winRate),
+      u=>Math.round(u.winRate*100)+'%',u=>u.wins+' de '+u.bids+' pujas');
+    h+=mk('📈 Más paga sobre el valor real',[...ST.M].filter(u=>u.infl).sort((a,b)=>b.infl-a.infl),
+      u=>u.infl.toFixed(2).replace('.',',')+'×',u=>'inflación personal');
+    const spec=[...ST.M].map(u=>{
+      const g=ST.gains.filter(x=>String(x.ownerId)===String(u.id));
+      return {...u,plus:g.reduce((a,x)=>a+x.delta,0)};
+    }).filter(u=>u.plus).sort((a,b)=>b.plus-a.plus);
+    h+=mk('🧠 Mejor ojo comprando',spec,u=>meur(u.plus),u=>'plusvalía latente en plantilla');
+  }
+
+  if(stMode==='duelos'){
+    const meId=String(cfg.userId);
+    const mine=ST.h2h.filter(d=>String(d.a)===meId||String(d.b)===meId).sort((a,b)=>b.n-a.n);
+    if(mine.length){
+      h+='<div class="card"><h3>Tus duelos</h3><div class="note">Subastas en las que habéis pujado los dos.</div><div style="margin-top:8px">';
+      mine.slice(0,8).forEach(d=>{
+        const rivalId=String(d.a)===meId?d.b:d.a;
+        const myWins=String(d.a)===meId?d.winsA:d.n-d.winsA;
+        const win=myWins>d.n-myWins;
+        h+='<div class="bidrow"><span>'+userFaceHTML(ST.icon[rivalId],ST.name[rivalId]).replace('class="face"','class="face" style="width:20px;height:20px;display:inline-block;vertical-align:middle"')+
+          ' '+esc(ST.name[rivalId]||'?')+'</span><b><span class="tag '+(win?'up':'dn')+'">'+myWins+'–'+(d.n-myWins)+'</span></b></div>';
+      });
+      const nem=mine.map(d=>{const r=String(d.a)===meId?d.b:d.a;const mw=String(d.a)===meId?d.winsA:d.n-d.winsA;
+        return {r,n:d.n,lost:d.n-mw}}).sort((a,b)=>b.lost-a.lost)[0];
+      if(nem&&nem.lost)h+='<div class="note" style="margin-top:10px">Tu némesis es <b>'+esc(ST.name[nem.r])+'</b>: te ha ganado <b>'+nem.lost+'</b> de vuestros '+nem.n+' duelos.</div>';
+      h+='</div></div>';
+    }
+    const top=[...ST.h2h].sort((a,b)=>b.n-a.n).slice(0,8);
+    if(top.length){
+      h+='<div class="card"><h3>Rivalidades de la liga</h3><div style="margin-top:8px">';
+      top.forEach(d=>{h+='<div class="bidrow"><span>'+esc(ST.name[d.a]||'?')+' vs '+esc(ST.name[d.b]||'?')+
+        '</span><b>'+d.winsA+'–'+(d.n-d.winsA)+'</b></div>'});
+      h+='</div></div>';
+    }
+  }
+
+  if(stMode==='jugadores'){
+    const rot=Object.entries(ST.playerMoves).sort((a,b)=>b[1]-a[1]).slice(0,10);
+    if(rot.length){
+      h+='<div class="card"><h3>🔄 Los más rotados</h3><div class="note">Cuántas veces han cambiado de manos en tu liga.</div><div style="margin-top:6px">';
+      rot.forEach(([pid,n])=>{const p=allPlayers[pid]||{};
+        h+='<div class="plr">'+faceHTML(pid,p.name)+'<div class="mid"><div class="nm">'+esc(p.name||'#'+pid)+
+        '</div><div class="sb">'+posBadge(p.position)+esc(dig(p,['team.name'])||'')+'</div></div>'+
+        '<div class="rt"><div class="eur">'+n+'\u00d7</div></div></div>'});
+      h+='</div></div>';
+    }
+    const g=[...ST.gains].sort((a,b)=>b.delta-a.delta);
+    const mk2=(t,arr,note)=>{ if(!arr.length)return'';
+      return '<div class="card"><h3>'+t+'</h3><div class="note">'+note+'</div><div style="margin-top:6px">'+
+      arr.slice(0,6).map(x=>'<div class="plr">'+faceHTML(x.id,x.name)+
+        '<div class="mid"><div class="nm">'+esc(x.name)+'</div><div class="sb">'+posBadge(x.position)+esc(x.owner)+
+        ' · pagó '+meur(x.paid)+'</div></div><div class="rt"><div class="eur" style="color:'+(x.delta>0?'#1d7a37':'#b3202b')+'">'+
+        (x.delta>0?'+':'')+meur(x.delta)+'</div><div class="sub2">'+pct(x.pctv)+'</div></div></div>').join('')+'</div></div>' };
+    h+=mk2('💎 Mejores compras de la liga',g,'Plusvalía desde el día que lo ficharon.');
+    h+=mk2('🧨 Peores compras de la liga',[...g].reverse().filter(x=>x.delta<0),'Los que se compraron caro y no levantan cabeza.');
+  }
+
+  if(stMode==='liga'){
+    const cash=ST.totalCash, val=ST.totalValue;
+    h+='<div class="card"><h3>Pulso económico</h3><div class="kpis" style="margin-top:10px">'+
+      '<div class="kpi"><div class="v">'+meur(cash)+'</div><div class="k">Dinero en caja</div></div>'+
+      '<div class="kpi"><div class="v">'+meur(val)+'</div><div class="k">Valor plantillas</div></div>'+
+      '<div class="kpi"><div class="v">'+(ST.infl?ST.infl.toFixed(2).replace('.',',')+'\u00d7':'—')+'</div><div class="k">Inflación liga</div></div>'+
+      '</div><div class="note" style="margin-top:10px">La <b>inflación</b> es cuánto se paga de media en tus subastas respecto al valor real del jugador. Por encima de 1,20× la liga está sobrepagando: te compensa vender más que comprar.</div></div>';
+    const rich=[...teams].sort((a,b)=>(balances[b.id]||0)-(balances[a.id]||0));
+    h+='<div class="card"><h3>Reparto de la riqueza</h3><div style="margin-top:6px">'+
+      rich.map((t,i)=>{const b=balances[t.id]||0,mx=Math.max(...rich.map(x=>balances[x.id]||0))||1;
+        return '<div style="padding:7px 0"><div style="display:flex;justify-content:space-between;font-size:.8rem">'+
+        '<span>'+esc(t.name)+'</span><b class="eur">'+meur(b)+'</b></div>'+
+        '<div class="bar"><i style="width:'+Math.round(b/mx*100)+'%"></i></div></div>'}).join('')+'</div></div>';
+    const totalOver=ST.M.reduce((a,u)=>a+u.overpay,0);
+    if(totalOver)h+='<div class="rec"><div class="rk">Dinero quemado por toda la liga</div><div class="rv">'+meur(totalOver)+
+      '</div><div class="rd">Suma de lo que cada ganador pagó por encima de la segunda puja. Dinero que nadie necesitaba gastar.</div></div>';
+  }
+
+  $('stWrap').innerHTML=h||'<div class="card"><div class="empty">Sin datos suficientes todavía.</div></div>';
+}
+
+$('bStats').onclick=()=>loadStats();
+
+/* ============================================================
+   BOTONES + ARRANQUE
+   ============================================================ */
+$('bMercado').onclick=()=>loadMercado();
+$('bRivales').onclick=()=>loadRivales();
+$('bClaus').onclick=()=>loadClausulas();
+$('bHist').onclick=()=>loadHistorial();
+
+hydrate();
+if(connected()) loadMercado(); else show('ajustes');
+
+/* ---- PWA: service worker ---- */
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('./sw.js').catch(e=>console.warn('SW no registrado',e));
+  });
+}
+/* Aviso si el navegador puede instalarla */
+let deferredPrompt=null;
+window.addEventListener('beforeinstallprompt',e=>{
+  e.preventDefault(); deferredPrompt=e;
+  const b=document.createElement('button');
+  b.textContent='📲 Instalar en el móvil';
+  b.style.cssText='position:fixed;left:12px;right:12px;bottom:78px;width:auto;z-index:30;box-shadow:0 4px 16px rgba(0,0,0,.25)';
+  b.onclick=async()=>{b.remove();deferredPrompt.prompt();deferredPrompt=null};
+  document.body.appendChild(b);
+  setTimeout(()=>b.remove(),12000);
+});
+</script>
+</body>
+</html>
