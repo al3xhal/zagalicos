@@ -109,6 +109,22 @@
   .bidrow{display:flex;justify-content:space-between;padding:5px 0;font-size:.78rem;border-bottom:1px dashed var(--line)}
   .bidrow:last-child{border:none}
   .bidrow b{font-family:var(--mono)}
+  .rsm{display:flex;align-items:center;gap:9px;padding:10px 0;border-bottom:1px solid var(--line)}
+  .rsm:last-child{border:none}
+  .rsm .pn{width:20px;text-align:center;font-family:var(--mono);font-weight:800;font-size:.8rem;color:var(--muted);flex-shrink:0}
+  .rsm .pn.top{color:#c9a227}
+  .rsm .mid{flex:1;min-width:0}
+  .rsm .nm2{font-size:.84rem;font-weight:650;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .rsm .ln{font-size:.68rem;color:var(--muted);font-family:var(--mono);margin-top:2px}
+  .rsm .rt2{text-align:right;flex-shrink:0}
+  .rsm .tot{font-family:var(--mono);font-weight:800;font-size:.88rem}
+  .delta{font-size:.66rem;font-weight:700;font-family:var(--mono);margin-top:2px}
+  .delta.up{color:#1d7a37} .delta.dn{color:#b3202b} .delta.fl{color:var(--muted)}
+  .face.sm{width:20px;height:20px;font-size:.55rem;display:inline-flex;vertical-align:middle}
+  select{width:100%;padding:10px 12px;border-radius:9px;border:1px solid var(--line);
+    background:#f7f8f9;font-size:.85rem;font-family:var(--sans);color:var(--ink);-webkit-appearance:none}
+  .thead{display:flex;gap:9px;padding:0 0 6px;font-size:.6rem;text-transform:uppercase;
+    letter-spacing:.05em;color:var(--muted);font-weight:700;border-bottom:1px solid var(--line)}
   .btn-squad{width:100%;margin-top:10px;padding:11px;border-radius:9px;border:1px solid var(--line);
     background:#f7f8f9;color:var(--ink);font-weight:700;font-size:.8rem;display:flex;
     align-items:center;justify-content:center;gap:7px;cursor:pointer}
@@ -139,8 +155,24 @@
 
 <main>
 
+<!-- ============ RESUMEN ============ -->
+<section id="s-resumen" class="active">
+  <div class="rowtop">
+    <span class="lbl">Clasificación</span>
+    <button class="sec" id="bResumen">Actualizar</button>
+  </div>
+  <div class="chips" id="rsChips">
+    <div class="chip on" data-rs="position">Posición</div>
+    <div class="chip" data-rs="total">Patrimonio</div>
+    <div class="chip" data-rs="balance">Saldo</div>
+    <div class="chip" data-rs="teamValue">Plantilla</div>
+  </div>
+  <div id="rsWrap"><div class="card"><div class="empty">Cargando…</div></div></div>
+  <div class="card"><div class="note" id="rsNote">—</div></div>
+</section>
+
 <!-- ============ MERCADO ============ -->
-<section id="s-mercado" class="active">
+<section id="s-mercado">
   <div class="card">
     <input id="qSearch" placeholder="🔍 ¿Quién tiene a…?  Escribe un jugador">
     <div id="qOut"></div>
@@ -185,7 +217,16 @@
     <span class="lbl">Movimientos</span>
     <button class="sec" id="bHist">Actualizar</button>
   </div>
-  <div class="card"><div class="note" id="histNote">—</div></div>
+  <div class="chips" id="hFecha">
+    <div class="chip" data-d="1">Hoy</div>
+    <div class="chip" data-d="7">7 días</div>
+    <div class="chip" data-d="30">30 días</div>
+    <div class="chip on" data-d="0">Todo</div>
+  </div>
+  <div class="card">
+    <select id="hTeam"><option value="">Todos los equipos</option></select>
+    <div class="note" id="histNote" style="margin-top:10px">—</div>
+  </div>
   <div class="card"><div id="histList"></div></div>
 </section>
 
@@ -244,7 +285,8 @@
 </main>
 
 <nav>
-  <button id="nMercado" class="on"><i>⚡</i>Mercado</button>
+  <button id="nResumen" class="on"><i>🏆</i>Resumen</button>
+  <button id="nMercado"><i>⚡</i>Mercado</button>
   <button id="nRivales"><i>🕵</i>Rivales</button>
   <button id="nClausulas"><i>🔓</i>Cláusulas</button>
   <button id="nHistorial"><i>📜</i>Historial</button>
@@ -468,17 +510,41 @@ function leagueMult(){
 function computeBalances(){
   const b={}; teams.forEach(t=>b[t.id]=INITIAL_BALANCE);
   const evs=[...loadArch().events].sort((x,y)=>y.date-x.date);
-  let reset=false;
+  let reset=false; const kinds={};
   for(const ev of evs){
     if(ev.type==='leagueReset'){reset=true;break}
-    if(ev.type!=='transfer'&&ev.type!=='market')continue;
-    (ev.content||[]).forEach(it=>{
-      if(it.amount==null)return;
-      if(it.from&&b[it.from.id]!=null)b[it.from.id]+=it.amount;
-      if(it.to  &&b[it.to.id]  !=null)b[it.to.id]  -=it.amount;
+    // Contamos CUALQUIER evento que mueva dinero entre managers de la liga.
+    // No filtramos por tipo: así entran cláusulas, traspasos del administrador,
+    // premios y cualquier tipo nuevo que Biwenger añada en el futuro.
+    // El filtro real es que el id sea un manager de la liga (los equipos de
+    // fútbol reales tienen ids pequeños y nunca coinciden con los de manager).
+    const items=Array.isArray(ev.content)?ev.content:(ev.content?[ev.content]:[]);
+    items.forEach(it=>{
+      if(!it||it.amount==null)return;
+      let moved=false;
+      if(it.from&&b[it.from.id]!=null){b[it.from.id]+=it.amount;moved=true}
+      if(it.to  &&b[it.to.id]  !=null){b[it.to.id]  -=it.amount;moved=true}
+      // ingreso o penalización directa sin contraparte (admin, premios)
+      if(!moved&&it.user&&b[it.user.id]!=null){b[it.user.id]+=it.amount;moved=true}
+      if(moved)kinds[ev.type]=(kinds[ev.type]||0)+1;
     });
   }
-  balances=b; return {complete:reset};
+  balances=b; window.__balKinds=kinds; return {complete:reset};
+}
+
+/* Contraste con la realidad: comparamos el saldo calculado del usuario
+   con el que devuelve la API. Si no cuadran, hay algún movimiento que
+   no estamos sabiendo interpretar y conviene decirlo, no esconderlo. */
+let balCheck=null;
+async function checkBalance(){
+  try{
+    const mk=await api('/as/api/v2/market');
+    const real=dig(mk,['data.status.balance']);
+    const calc=balances[cfg.userId];
+    if(real==null||calc==null)return null;
+    balCheck={real,calc,diff:calc-real};
+    return balCheck;
+  }catch{ return null }
 }
 const ceiling=t=>(balances[t.id]??0)+Math.round((t.teamValue||0)*BID_HEADROOM);
 
@@ -568,13 +634,14 @@ function recommendBid(pid,price,myCeiling){
 /* ============================================================
    NAVEGACIÓN
    ============================================================ */
-const SECTIONS=['mercado','rivales','clausulas','historial','stats','ajustes'];
+const SECTIONS=['resumen','mercado','rivales','clausulas','historial','stats','ajustes'];
 function show(name){
   SECTIONS.forEach(s=>{
     $('s-'+s).classList.toggle('active',s===name);
     $('n'+s.charAt(0).toUpperCase()+s.slice(1)).classList.toggle('on',s===name);
   });
   if(!connected())return;
+  if(name==='resumen')loadResumen();
   if(name==='mercado')loadMercado();
   if(name==='rivales')loadRivales();
   if(name==='clausulas')loadClausulas();
@@ -597,6 +664,14 @@ function hydrate(){
   $('fLeague').value=cfg.leagueId||''; $('fUser').value=cfg.userId||''; $('fVer').value=cfg.version||'';
   pill(); archNote();
 }
+function eventTypesNote(){
+  const evs=loadArch().events, all={}, money=window.__balKinds||{};
+  evs.forEach(e=>all[e.type]=(all[e.type]||0)+1);
+  const keys=Object.keys(all).sort((a,b)=>all[b]-all[a]);
+  if(!keys.length)return '';
+  return '<br><br><b>Tipos de evento archivados:</b><br>'+
+    keys.map(k=>k+' ('+all[k]+')'+(money[k]?' <span style="color:#1d7a37">\u2192 mueve dinero</span>':'')).join(' · ');
+}
 function archNote(){
   const a=loadArch(), snaps=Object.keys(jget(K_SNAP,{})).length;
   const hasReset=a.events.some(e=>e.type==='leagueReset');
@@ -605,7 +680,8 @@ function archNote(){
     (hasReset?' · reinicio de liga localizado ✓':' · <span style="color:#b3202b">falta el reinicio de liga</span>')+
     (cal.tot?'<br><br><b>Calibración:</b> de '+cal.tot+' subastas predichas, la puja sugerida habría ganado <b>'+cal.hit+'</b>'+
       (cal.cheap?' ('+cal.cheap+' pagando de más de un 25% innecesario)':'')+'.'
-     :'<br><br><b>Calibración:</b> aún sin subastas cerradas que comparar. Se irá midiendo sola.');
+     :'<br><br><b>Calibración:</b> aún sin subastas cerradas que comparar. Se irá midiendo sola.')+
+    eventTypesNote();
 }
 
 $('bLogin').onclick=async()=>{
@@ -842,10 +918,21 @@ async function loadRivales(){
   try{
     await loadBase(true);
     const {complete}=computeBalances();
+    await checkBalance();
     const nAuc=Object.values(profiles)[0]?.auctions||0;
+    let warn='';
+    if(balCheck&&Math.abs(balCheck.diff)>50000){
+      warn='<br><br><b style="color:#b3202b">\u26a0 Descuadre detectado.</b> Tu saldo real es '+
+        meur(balCheck.real)+' pero el calculado da '+meur(balCheck.calc)+' ('+
+        (balCheck.diff>0?'+':'')+meur(balCheck.diff)+'). Hay algún movimiento en el tablón que no se está '+
+        'interpretando. Los saldos de los rivales arrastran probablemente un error parecido: '+
+        'úsalos como orientativos hasta corregirlo.';
+    } else if(balCheck){
+      warn='<br><br><span style="color:#1d7a37">\u2713 Saldo calculado cuadra con el real ('+meur(balCheck.real)+').</span>';
+    }
     $('spyNote').innerHTML=(complete?'Saldos calculados desde el reinicio de liga.':'<b style="color:#b3202b">No se ha localizado el reinicio de liga</b> — usa «Archivar histórico completo» en Ajustes.')+
       ' Perfiles construidos sobre <b>'+nAuc+'</b> subastas archivadas.'+
-      (nAuc<12?' Muestra pequeña: tómalos como orientativos.':'');
+      (nAuc<12?' Muestra pequeña: tómalos como orientativos.':'')+warn;
     renderRivales();
   }catch(err){$('spyNote').textContent='Error: '+err.message}
   $('bRivales').disabled=false;$('bRivales').textContent='Actualizar';
@@ -994,19 +1081,20 @@ async function loadHistorial(){
         const p=allPlayers[it.player]||{};
         rows.push({name:p.name||('#'+it.player),id:it.player,pos:p.position,
           amount:it.amount,from:it.from?.name,to:it.to?.name,date:ev.date,
+          fromId:it.from?.id,toId:it.to?.id,fromIcon:it.from?.icon,toIcon:it.to?.icon,
           kind:ev.type==='market'?'Puja ganada':(it.from&&it.to?'Traspaso':(it.type==='immediateSale'?'Venta directa':'Al mercado')),
           bids:it.bids||[]});
       });
     });
-    $('histList').innerHTML=rows.slice(0,80).map(r=>{
-      const d2=r.date?new Date(r.date*1000).toLocaleDateString('es-ES'):'';
-      const who=r.from&&r.to?esc(r.from)+' → '+esc(r.to):esc(r.to||r.from||'');
-      const bidTxt=r.bids.length?'<details><summary>'+r.bids.length+' pujas rivales</summary>'+
-        r.bids.map(b=>'<div class="bidrow"><span>'+esc(b.user?.name||'?')+'</span><b>'+meur(b.amount)+'</b></div>').join('')+'</details>':'';
-      return '<div class="plr"><div class="mid"><div class="nm">'+esc(r.name)+'</div>'+
-        '<div class="sb">'+posBadge(r.pos)+r.kind+' · '+who+' · '+d2+'</div>'+bidTxt+'</div>'+
-        '<div class="rt"><div class="eur">'+meur(r.amount)+'</div></div></div>';
-    }).join('')||'<div class="empty">Sin movimientos archivados.</div>';
+    histRows=rows;
+    const sel=$('hTeam'), cur=sel.value;
+    const seen=new Map();
+    rows.forEach(r=>{if(r.fromId)seen.set(String(r.fromId),r.from);if(r.toId)seen.set(String(r.toId),r.to)});
+    sel.innerHTML='<option value="">Todos los equipos</option>'+
+      [...seen.entries()].filter(([,n])=>n).sort((a,b)=>a[1].localeCompare(b[1]))
+      .map(([id,n])=>'<option value="'+id+'">'+esc(n)+'</option>').join('');
+    sel.value=cur; hTeamId=cur;
+    renderHist();
   }catch(err){$('histNote').textContent='Error: '+err.message}
   $('bHist').disabled=false;$('bHist').textContent='Actualizar';
 }
@@ -1265,16 +1353,134 @@ function renderStats(){
 
 $('bStats').onclick=()=>loadStats();
 
+
+/* ============================================================
+   RESUMEN (pantalla principal)
+   ============================================================ */
+let rsSort='position';
+document.querySelectorAll('#rsChips .chip').forEach(c=>c.onclick=()=>{
+  document.querySelectorAll('#rsChips .chip').forEach(x=>x.classList.remove('on'));
+  c.classList.add('on'); rsSort=c.dataset.rs; renderResumen();
+});
+
+// variación del patrimonio total (saldo + plantilla) respecto a hace N días
+function totalDelta(teamId,n){
+  const old=teamSnapNDaysAgo(n); if(!old||!old[teamId])return null;
+  const o=old[teamId]; if(o.b==null||o.v==null)return null;
+  const t=teams.find(x=>String(x.id)===String(teamId)); if(!t)return null;
+  const now=(balances[teamId]??0)+(t.teamValue||0);
+  return now-(o.b+o.v);
+}
+function deltaTag(d){
+  if(d==null)return '<span class="delta fl">—</span>';
+  if(Math.abs(d)<10000)return '<span class="delta fl">=</span>';
+  const up=d>0;
+  return '<span class="delta '+(up?'up':'dn')+'">'+(up?'\u25b2':'\u25bc')+' '+meur(Math.abs(d))+'</span>';
+}
+
+async function loadResumen(){
+  if(!connected()){show('ajustes');return}
+  $('bResumen').disabled=true;$('bResumen').textContent='…';
+  try{
+    await loadBase(true);
+    computeBalances();
+    await checkBalance();
+    renderResumen();
+  }catch(err){
+    $('rsWrap').innerHTML='<div class="card"><div class="empty">Error: '+esc(err.message)+'</div></div>';
+  }
+  $('bResumen').disabled=false;$('bResumen').textContent='Actualizar';
+}
+
+function renderResumen(){
+  if(!teams.length){$('rsWrap').innerHTML='<div class="card"><div class="empty">Sin datos. Pulsa «Actualizar».</div></div>';return}
+  const rows=teams.map(t=>({...t,
+    bal:balances[t.id]??0,
+    total:(balances[t.id]??0)+(t.teamValue||0),
+    d1:totalDelta(t.id,1), d7:totalDelta(t.id,7)
+  }));
+  rows.sort((a,b)=> rsSort==='position' ? (a.position||99)-(b.position||99)
+    : (b[rsSort==='total'?'total':rsSort==='balance'?'bal':'teamValue'])-(a[rsSort==='total'?'total':rsSort==='balance'?'bal':'teamValue']));
+
+  const maxT=Math.max(...rows.map(r=>r.total))||1;
+  let h='<div class="card">'+
+    '<div class="thead"><span style="width:20px"></span><span style="flex:1">Equipo</span>'+
+    '<span style="text-align:right">Patrimonio · 1d / 7d</span></div>';
+
+  rows.forEach((r,i)=>{
+    const me=String(r.id)===String(cfg.userId);
+    const n=rsSort==='position'?(r.position||i+1):i+1;
+    h+='<div class="rsm"'+(me?' style="background:rgba(226,51,63,.045);border-radius:8px;padding-left:6px;padding-right:6px"':'')+'>'+
+      '<div class="pn'+(n<=3?' top':'')+'">'+n+'</div>'+
+      userFaceHTML(r.icon,r.name)+
+      '<div class="mid">'+
+        '<div class="nm2">'+esc(r.name)+(me?' <span class="tag dark">tú</span>':'')+'</div>'+
+        '<div class="ln">'+(r.points||0)+' pts · '+(r.teamSize||0)+' jug. · '+
+          meur(r.bal)+' + '+meur(r.teamValue)+'</div>'+
+        '<div class="bar" style="margin-top:5px"><i style="width:'+Math.max(2,Math.round(r.total/maxT*100))+'%"></i></div>'+
+      '</div>'+
+      '<div class="rt2"><div class="tot">'+meur(r.total)+'</div>'+
+        deltaTag(r.d1)+'<br>'+deltaTag(r.d7)+'</div>'+
+    '</div>';
+  });
+  h+='</div>';
+  $('rsWrap').innerHTML=h;
+
+  const snaps=Object.keys(jget(K_TEAMSNAP,{})).length;
+  let note='<b>Patrimonio</b> = saldo + valor de plantilla. Las flechas comparan con ayer y con hace 7 días.';
+  if(snaps<2)note+=' <b>Aún no hay historial suficiente</b> para calcular variaciones: se irán rellenando según abras la app cada día (llevas '+snaps+').';
+  if(balCheck&&Math.abs(balCheck.diff)>50000){
+    note+='<br><br><b style="color:#b3202b">\u26a0</b> Tu saldo real es '+meur(balCheck.real)+' y el calculado da '+
+      meur(balCheck.calc)+'. Los saldos de rivales arrastran un error parecido.';
+  } else if(balCheck){
+    note+='<br><br><span style="color:#1d7a37">\u2713 Saldos verificados contra tu saldo real.</span>';
+  }
+  note+='<br><br>El saldo de los rivales es <b>calculado</b> a partir del histórico, no un dato que Biwenger publique.';
+  $('rsNote').innerHTML=note;
+}
+
+/* ---- filtros de historial ---- */
+let hDays=0, hTeamId='';
+document.querySelectorAll('#hFecha .chip').forEach(c=>c.onclick=()=>{
+  document.querySelectorAll('#hFecha .chip').forEach(x=>x.classList.remove('on'));
+  c.classList.add('on'); hDays=Number(c.dataset.d); renderHist();
+});
+$('hTeam').onchange=()=>{hTeamId=$('hTeam').value;renderHist()};
+let histRows=[];
+
+function renderHist(){
+  const cut=hDays?Math.floor(Date.now()/1000)-hDays*86400:0;
+  const rows=histRows.filter(r=>{
+    if(cut&&r.date<cut)return false;
+    if(hTeamId&&String(r.fromId)!==hTeamId&&String(r.toId)!==hTeamId)return false;
+    return true;
+  });
+  $('histList').innerHTML=rows.slice(0,120).map(r=>{
+    const d2=r.date?new Date(r.date*1000).toLocaleDateString('es-ES'):'';
+    const side=(nm,ic)=>nm?userFaceHTML(ic,nm).replace('class="face"','class="face sm"')+' '+esc(nm):'';
+    const who=r.from&&r.to?side(r.from,r.fromIcon)+' \u2192 '+side(r.to,r.toIcon)
+      :(r.to?side(r.to,r.toIcon):side(r.from,r.fromIcon));
+    const bidTxt=r.bids.length?'<details><summary>'+r.bids.length+' pujas rivales</summary>'+
+      r.bids.map(b=>'<div class="bidrow"><span>'+esc(b.user?.name||'?')+'</span><b>'+meur(b.amount)+'</b></div>').join('')+
+      '<div class="note" style="margin-top:6px">Biwenger solo publica las dos mejores pujas perdedoras. Si hubo más, no son visibles.</div></details>':'';
+    return '<div class="plr">'+faceHTML(r.id,r.name)+'<div class="mid"><div class="nm">'+esc(r.name)+'</div>'+
+      '<div class="sb">'+posBadge(r.pos)+r.kind+' · '+who+' · '+d2+'</div>'+bidTxt+'</div>'+
+      '<div class="rt"><div class="eur">'+meur(r.amount)+'</div></div></div>';
+  }).join('')||'<div class="empty">Sin movimientos con estos filtros.</div>';
+  $('histNote').innerHTML='<b>'+rows.length+'</b> movimientos mostrados de <b>'+histRows.length+'</b> archivados.';
+}
+
 /* ============================================================
    BOTONES + ARRANQUE
    ============================================================ */
+$('bResumen').onclick=()=>loadResumen();
 $('bMercado').onclick=()=>loadMercado();
 $('bRivales').onclick=()=>loadRivales();
 $('bClaus').onclick=()=>loadClausulas();
 $('bHist').onclick=()=>loadHistorial();
 
 hydrate();
-if(connected()) loadMercado(); else show('ajustes');
+if(connected()) show('resumen'); else show('ajustes');
 
 /* ---- PWA: service worker ---- */
 if('serviceWorker' in navigator){
