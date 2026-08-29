@@ -109,6 +109,16 @@
   .bidrow{display:flex;justify-content:space-between;padding:5px 0;font-size:.78rem;border-bottom:1px dashed var(--line)}
   .bidrow:last-child{border:none}
   .bidrow b{font-family:var(--mono)}
+  .diagrow{padding:8px 0;border-bottom:1px solid var(--line);font-size:.78rem}
+  .diagrow:last-child{border:none}
+  .diagrow .dt{display:flex;justify-content:space-between;gap:8px}
+  .diagrow .dd{color:var(--muted);font-size:.7rem;margin-top:2px}
+  .trow{display:flex;justify-content:space-between;align-items:baseline;gap:8px;
+    padding:7px 0;border-bottom:1px solid var(--line);font-size:.76rem}
+  .trow:last-child{border:none}
+  .trow .tt{color:var(--muted);font-size:.68rem}
+  .trow .tb{font-family:var(--mono);font-weight:700}
+  .trow.gap{background:rgba(226,51,63,.06);border-radius:6px;padding-left:6px}
   .rsm{display:flex;align-items:center;gap:9px;padding:10px 0;border-bottom:1px solid var(--line)}
   .rsm:last-child{border:none}
   .rsm .pn{width:20px;text-align:center;font-family:var(--mono);font-weight:800;font-size:.8rem;color:var(--muted);flex-shrink:0}
@@ -169,6 +179,12 @@
   </div>
   <div id="rsWrap"><div class="card"><div class="empty">Cargando…</div></div></div>
   <div class="card"><div class="note" id="rsNote">—</div></div>
+  <div class="card">
+    <div class="rowtop"><h3 style="margin:0">Rastro de mi saldo</h3>
+      <button class="sec" id="bTrail">Reconstruir</button></div>
+    <div class="note">Movimiento a movimiento, desde el reinicio, para encontrar dónde se desvía del real.</div>
+    <div id="trailResult" style="margin-top:8px"></div>
+  </div>
 </section>
 
 <!-- ============ MERCADO ============ -->
@@ -208,6 +224,12 @@
     <div class="chip" data-cl="def">Mi exposición</div>
   </div>
   <div class="card"><div class="note" id="clNote">Cruza la cláusula de cada jugador con su valor real, quién puede pagarla y si está bloqueada.</div></div>
+  <div class="card">
+    <div class="rowtop"><h3 style="margin:0">¿Valor de mercado o máximo con lo pagado?</h3>
+      <button class="sec" id="bDiagClause">Comprobar</button></div>
+    <div class="note">Compara las cláusulas reales de las 13 plantillas contra las dos hipótesis, usando solo los jugadores donde eso marca diferencia.</div>
+    <div id="diagResult" style="margin-top:8px"></div>
+  </div>
   <div id="clWrap"></div>
 </section>
 
@@ -228,6 +250,15 @@
     <div class="note" id="histNote" style="margin-top:10px">—</div>
   </div>
   <div class="card"><div id="histList"></div></div>
+</section>
+
+<!-- ============ LIGA (evolución de puntos) ============ -->
+<section id="s-liga">
+  <div class="rowtop">
+    <span class="lbl">Evolución de la liga</span>
+    <button class="sec" id="bLiga">Actualizar</button>
+  </div>
+  <div id="lgWrap"><div class="card"><div class="empty">Cargando…</div></div></div>
 </section>
 
 <!-- ============ ESTADÍSTICAS ============ -->
@@ -274,6 +305,8 @@
     <div class="note" id="archNote">—</div>
     <button class="sec" id="bArchive" style="width:100%;margin-top:12px;padding:11px">Archivar histórico completo</button>
     <div class="msg" id="mArchive"></div>
+    <button class="sec" id="bDumpRound" style="width:100%;margin-top:8px;padding:11px">Volcar roundFinished / seasonFinished / bettingPool</button>
+    <pre id="dumpResult" style="display:none;margin-top:8px"></pre>
     <div class="note" style="margin-top:10px">Recorre el tablón entero hacia atrás y lo guarda en este móvil. Cuanto más histórico, mejores son los perfiles de pujador. Hazlo una vez.</div>
     <details>
       <summary>Depuración</summary>
@@ -290,6 +323,7 @@
   <button id="nRivales"><i>🕵</i>Rivales</button>
   <button id="nClausulas"><i>🔓</i>Cláusulas</button>
   <button id="nHistorial"><i>📜</i>Historial</button>
+  <button id="nLiga"><i>📈</i>Liga</button>
   <button id="nStats"><i>📊</i>Stats</button>
 </nav>
 
@@ -513,19 +547,34 @@ function computeBalances(){
   let reset=false; const kinds={};
   for(const ev of evs){
     if(ev.type==='leagueReset'){reset=true;break}
-    // Contamos CUALQUIER evento que mueva dinero entre managers de la liga.
+
+    // Premios de fin de jornada: ev.content.results[] trae {user, points, bonus}.
+    // "bonus" es el importe (no "amount") y va anidado, no en un array plano.
+    if(ev.type==='roundFinished'){
+      const results=(ev.content&&ev.content.results)||[];
+      results.forEach(r=>{
+        if(r.user&&r.bonus!=null&&b[r.user.id]!=null){
+          b[r.user.id]+=r.bonus;
+          kinds[ev.type]=(kinds[ev.type]||0)+1;
+        }
+      });
+      continue;
+    }
+
+    // Contamos CUALQUIER otro evento que mueva dinero entre managers de la liga.
     // No filtramos por tipo: así entran cláusulas, traspasos del administrador,
-    // premios y cualquier tipo nuevo que Biwenger añada en el futuro.
-    // El filtro real es que el id sea un manager de la liga (los equipos de
-    // fútbol reales tienen ids pequeños y nunca coinciden con los de manager).
+    // y cualquier tipo nuevo que Biwenger añada en el futuro.
     const items=Array.isArray(ev.content)?ev.content:(ev.content?[ev.content]:[]);
     items.forEach(it=>{
       if(!it||it.amount==null)return;
       let moved=false;
+      // Bonos confirmados (racha diaria, y cualquier otro con la misma forma):
+      // "user" recibe "amount" directo, sin contrapartida. Estructura verificada
+      // contra datos reales, no es una suposición.
+      if(ev.type==='bonus'&&it.user&&b[it.user.id]!=null){ b[it.user.id]+=it.amount; moved=true; }
+      // Traspasos y mercado: comprador Y/O vendedor identificados (from/to).
       if(it.from&&b[it.from.id]!=null){b[it.from.id]+=it.amount;moved=true}
       if(it.to  &&b[it.to.id]  !=null){b[it.to.id]  -=it.amount;moved=true}
-      // ingreso o penalización directa sin contraparte (admin, premios)
-      if(!moved&&it.user&&b[it.user.id]!=null){b[it.user.id]+=it.amount;moved=true}
       if(moved)kinds[ev.type]=(kinds[ev.type]||0)+1;
     });
   }
@@ -634,7 +683,7 @@ function recommendBid(pid,price,myCeiling){
 /* ============================================================
    NAVEGACIÓN
    ============================================================ */
-const SECTIONS=['resumen','mercado','rivales','clausulas','historial','stats','ajustes'];
+const SECTIONS=['resumen','mercado','rivales','clausulas','historial','liga','stats','ajustes'];
 function show(name){
   SECTIONS.forEach(s=>{
     $('s-'+s).classList.toggle('active',s===name);
@@ -646,6 +695,7 @@ function show(name){
   if(name==='rivales')loadRivales();
   if(name==='clausulas')loadClausulas();
   if(name==='historial')loadHistorial();
+  if(name==='liga')loadLiga();
   if(name==='stats')loadStats();
 }
 SECTIONS.forEach(s=>$('n'+s.charAt(0).toUpperCase()+s.slice(1)).onclick=()=>show(s));
@@ -672,6 +722,41 @@ function eventTypesNote(){
   return '<br><br><b>Tipos de evento archivados:</b><br>'+
     keys.map(k=>k+' ('+all[k]+')'+(money[k]?' <span style="color:#1d7a37">\u2192 mueve dinero</span>':'')).join(' · ');
 }
+
+/* Busca, entre TODO lo ya archivado en este movil, eventos que llevan
+   importe (amount) pero que hoy no sabemos interpretar (no son bonus
+   con user, ni tienen from/to). Asi encontramos el evento real sin
+   depender de mas capturas de pantalla. */
+function findUnhandledMoneyEvents(){
+  const evs=loadArch().events, hits=[];
+  evs.forEach(ev=>{
+    if(ev.type==='roundFinished')return; // ya interpretado explícitamente (ev.content.results[].bonus)
+    const items=Array.isArray(ev.content)?ev.content:(ev.content?[ev.content]:[]);
+    items.forEach(it=>{
+      if(!it||it.amount==null)return;
+      const handled=(ev.type==='bonus'&&it.user)||it.from||it.to;
+      if(!handled) hits.push({date:ev.date,type:ev.type,raw:it});
+    });
+  });
+  return hits.sort((a,b)=>b.date-a.date);
+}
+/* Volcado crudo de tipos concretos, sin filtrar por si llevan "amount" o no --
+   para inspeccionar a mano tipos que sospechamos pero que el buscador
+   automatico no supo reconocer (p.ej. roundFinished). */
+function dumpEventTypes(types){
+  const evs=loadArch().events.filter(e=>types.includes(e.type));
+  return evs;
+}
+function unhandledMoneyNote(){
+  const hits=findUnhandledMoneyEvents();
+  if(!hits.length)return '<br><br><span style="color:#1d7a37">\u2713 No hay eventos con dinero sin interpretar en lo ya archivado.</span>';
+  return '<br><br><b style="color:#b3202b">\u26a0 '+hits.length+' evento(s) con dinero que no se están contando:</b><br>'+
+    hits.slice(0,6).map(h=>{
+      const d=new Date(h.date*1000).toLocaleDateString('es-ES');
+      return '<div class="diagrow"><div class="dt"><b>'+esc(h.type)+'</b><span>'+d+'</span></div>'+
+        '<div class="dd">'+esc(JSON.stringify(h.raw)).slice(0,220)+'</div></div>';
+    }).join('');
+}
 function archNote(){
   const a=loadArch(), snaps=Object.keys(jget(K_SNAP,{})).length;
   const hasReset=a.events.some(e=>e.type==='leagueReset');
@@ -681,7 +766,7 @@ function archNote(){
     (cal.tot?'<br><br><b>Calibración:</b> de '+cal.tot+' subastas predichas, la puja sugerida habría ganado <b>'+cal.hit+'</b>'+
       (cal.cheap?' ('+cal.cheap+' pagando de más de un 25% innecesario)':'')+'.'
      :'<br><br><b>Calibración:</b> aún sin subastas cerradas que comparar. Se irá midiendo sola.')+
-    eventTypesNote();
+    eventTypesNote()+unhandledMoneyNote();
 }
 
 $('bLogin').onclick=async()=>{
@@ -714,6 +799,12 @@ $('bVerify').onclick=async()=>{
   $('bVerify').disabled=false;
 };
 
+$('bDumpRound').onclick=()=>{
+  const evs=dumpEventTypes(['roundFinished','seasonFinished','bettingPool','loanReturn']);
+  const box=$('dumpResult');
+  box.style.display='block';
+  box.textContent = evs.length ? JSON.stringify(evs,null,1) : 'No hay eventos de esos tipos archivados todavía.';
+};
 $('bArchive').onclick=async()=>{
   const m=$('mArchive');m.className='msg ok show';
   $('bArchive').disabled=true;
@@ -1076,6 +1167,16 @@ async function loadHistorial(){
     $('histNote').innerHTML=(n?'<b>'+n+'</b> nuevos · ':'')+'<b>'+a.events.length+'</b> eventos en el archivo local.';
     const rows=[];
     a.events.forEach(ev=>{
+      if(ev.type==='roundFinished'){
+        const results=(ev.content&&ev.content.results)||[];
+        results.forEach(r=>{
+          if(!r.user||r.bonus==null)return;
+          rows.push({name:(ev.content.round&&ev.content.round.name)||'Jornada',id:null,pos:0,
+            amount:r.bonus,from:null,to:r.user.name,toId:r.user.id,toIcon:r.user.icon,fromId:null,fromIcon:null,
+            date:ev.date,kind:'Premio de jornada ('+r.points+' pts)',bids:[]});
+        });
+        return;
+      }
       if(ev.type!=='transfer'&&ev.type!=='market')return;
       (ev.content||[]).forEach(it=>{
         const p=allPlayers[it.player]||{};
@@ -1242,18 +1343,15 @@ function renderStats(){
     const cara=[...A].sort((a,b)=>b.amount-a.amount)[0];
     const tirado=[...A].filter(x=>x.over!=null).sort((a,b)=>b.over-a.over)[0];
     const ajust=[...A].filter(x=>x.over!=null&&x.over>0).sort((a,b)=>a.over-b.over)[0];
-    const disp=Object.entries(ST.playerBids).sort((a,b)=>b[1]-a[1])[0];
     const R=(k,v,d)=>'<div class="rec"><div class="rk">'+k+'</div><div class="rv">'+v+'</div><div class="rd">'+d+'</div></div>';
     if(cara)h+=R('Fichaje más caro',meur(cara.amount),
       esc(allPlayers[cara.player]?.name||'?')+' \u2192 '+esc(cara.winnerName));
-    if(tirado)h+=R('Dinero tirado a la basura',meur(tirado.over),
+    if(tirado)h+=R('Dinero tirado a la basura',eur(tirado.over),
       esc(tirado.winnerName)+' pagó '+meur(tirado.amount)+' por '+esc(allPlayers[tirado.player]?.name||'?')+
       ' cuando la segunda puja era '+meur(tirado.second)+'.');
-    if(ajust)h+=R('Victoria más ajustada',meur(ajust.over),
+    if(ajust)h+=R('Victoria más ajustada',eur(ajust.over),
       esc(ajust.winnerName)+' le arrebató '+esc(allPlayers[ajust.player]?.name||'?')+' a '+
       esc(ajust.others.sort((a,b)=>b.amount-a.amount)[0].name)+' por esa miseria.');
-    if(disp)h+=R('Jugador más disputado',disp[1]+' pujas',
-      esc(allPlayers[disp[0]]?.name||'?')+' es el hombre más deseado de la liga.');
     const best=[...ST.gains].sort((a,b)=>b.pctv-a.pctv)[0];
     const worst=[...ST.gains].sort((a,b)=>a.pctv-b.pctv)[0];
     if(best)h+=R('Mejor fichaje',pct(best.pctv),
@@ -1470,13 +1568,245 @@ function renderHist(){
   $('histNote').innerHTML='<b>'+rows.length+'</b> movimientos mostrados de <b>'+histRows.length+'</b> archivados.';
 }
 
+
+/* ============================================================
+   FORMULA REAL DE LA CLAUSULA: ¿valor de mercado solo, o
+   maximo entre valor de mercado y ultimo precio pagado?
+   Lo comprobamos contra las clausulas REALES de las 13 plantillas.
+   ============================================================ */
+const CLAUSE_TIERS=[
+  [0,5000000,8000000],[5000000,10000000,13000000],[10000000,15000000,18000000],
+  [15000000,20000000,23000000],[20000000,25000000,28000000],[25000000,30000000,33000000],
+  [30000000,Infinity,35000000],
+];
+function tierClause(v){ for(const [lo,hi,c] of CLAUSE_TIERS){ if(v>=lo&&v<hi) return c; } return CLAUSE_TIERS.at(-1)[2]; }
+
+function diagClauseFormula(){
+  const rows=[];
+  Object.entries(squads).forEach(([tid,sq])=>(sq||[]).forEach(p=>{
+    if(p.clause==null||p.price==null||p.paid==null)return;
+    const tierByValue=tierClause(p.price);
+    const tierByMax=tierClause(Math.max(p.price,p.paid));
+    if(tierByValue===tierByMax)return; // este jugador no distingue entre las dos hipótesis, se descarta
+    const owner=teams.find(t=>String(t.id)===String(tid))?.name||'?';
+    rows.push({name:p.name,owner,price:p.price,paid:p.paid,clause:p.clause,
+      tierByValue,tierByMax,
+      okValue:p.clause===tierByValue, okMax:p.clause===tierByMax});
+  }));
+  return rows;
+}
+
+async function runClauseDiag(){
+  const box=$('diagResult');
+  box.innerHTML='<div class="empty">Comprobando…</div>';
+  try{
+    await loadBase();
+    const rows=diagClauseFormula();
+    if(!rows.length){
+      box.innerHTML='<div class="empty">Ningún jugador de las 13 plantillas tiene el valor de mercado y el precio pagado en tramos distintos ahora mismo — no hay casos que permitan distinguir las dos hipótesis todavía. Vuelve a probar cuando algún jugador comprado caro haya bajado de tramo, o viceversa.</div>';
+      return;
+    }
+    const okMax=rows.filter(r=>r.okMax&&!r.okValue).length;
+    const okValue=rows.filter(r=>r.okValue&&!r.okMax).length;
+    const neither=rows.filter(r=>!r.okValue&&!r.okMax).length;
+    let verdict;
+    if(okMax>okValue&&neither===0) verdict='<b style="color:#1d7a37">✓ Confirmado: la cláusula usa el MÁXIMO entre precio pagado y valor de mercado.</b>';
+    else if(okValue>okMax&&neither===0) verdict='<b style="color:#b3202b">✗ Descartado: en tu liga la cláusula usa solo el valor de mercado actual, no el máximo.</b>';
+    else if(neither>0) verdict='<b style="color:#e8a51c">⚠ Ninguna de las dos hipótesis explica todos los casos — hay algo más en juego (quizá un tercer factor, o alguna cláusula movida a mano).</b>';
+    else verdict='Resultado ambiguo con los datos disponibles.';
+
+    box.innerHTML='<div class="note">'+verdict+'</div>'+
+      '<div class="note" style="margin-top:8px">De <b>'+rows.length+'</b> jugadores con precio pagado y valor de mercado en tramos distintos: '+
+      '<b>'+okMax+'</b> confirman «máximo», <b>'+okValue+'</b> confirman «solo valor», <b>'+neither+'</b> no cuadran con ninguna.</div>'+
+      '<div style="margin-top:10px">'+rows.slice(0,10).map(r=>'<div class="diagrow"><div class="dt"><b>'+esc(r.name)+'</b><span>'+esc(r.owner)+'</span></div>'+
+        '<div class="dd">valor '+meur(r.price)+' · pagado '+meur(r.paid)+' · cláusula real '+meur(r.clause)+
+        ' · predice-valor '+meur(r.tierByValue)+' · predice-máximo '+meur(r.tierByMax)+'</div></div>').join('')+'</div>';
+  }catch(err){ box.innerHTML='<div class="empty">Error: '+esc(err.message)+'</div>'; }
+}
+
+
+/* ============================================================
+   RASTRO DE SALDO: reconstruye, evento a evento, el saldo
+   calculado de un manager -- para encontrar a ojo cual es el
+   movimiento que no se esta interpretando bien, en vez de
+   seguir adivinando reglas nuevas a ciegas.
+   ============================================================ */
+function balanceTrail(teamId){
+  const evs=[...loadArch().events].sort((x,y)=>x.date-y.date); // cronologico, del mas antiguo al mas nuevo
+  let bal=INITIAL_BALANCE, started=false, rows=[];
+  evs.forEach(ev=>{
+    if(ev.type==='leagueReset'){ bal=INITIAL_BALANCE; started=true; rows=[]; return; }
+    if(!started)return; // ignoramos todo lo anterior al reinicio
+
+    if(ev.type==='roundFinished'){
+      const results=(ev.content&&ev.content.results)||[];
+      results.forEach(r=>{
+        if(r.user&&r.bonus!=null&&String(r.user.id)===String(teamId)){
+          bal+=r.bonus;
+          rows.push({date:ev.date,type:ev.type,player:null,delta:r.bonus,bal,
+            other:(ev.content.round&&ev.content.round.name)||'premio de jornada'});
+        }
+      });
+      return;
+    }
+
+    const items=Array.isArray(ev.content)?ev.content:(ev.content?[ev.content]:[]);
+    items.forEach(it=>{
+      if(!it||it.amount==null)return;
+      let delta=0, touches=false, other=null;
+      if(ev.type==='bonus'&&it.user&&String(it.user.id)===String(teamId)){
+        delta+=it.amount; touches=true; other=it.reason||'bono';
+      }
+      if(it.from&&String(it.from.id)===String(teamId)){delta+=it.amount;touches=true;other=it.to?.name}
+      if(it.to&&String(it.to.id)===String(teamId)){delta-=it.amount;touches=true;other=it.from?.name}
+      if(!touches)return;
+      bal+=delta;
+      rows.push({date:ev.date,type:ev.type,player:it.player,delta,bal,other});
+    });
+  });
+  return rows;
+}
+
+async function runBalanceTrail(){
+  const box=$('trailResult');
+  box.innerHTML='<div class="empty">Reconstruyendo…</div>';
+  try{
+    await loadBase();
+    await checkBalance();
+    const rows=balanceTrail(cfg.userId);
+    const calc=rows.length?rows.at(-1).bal:INITIAL_BALANCE;
+    let head='';
+    if(balCheck){
+      const ok=Math.abs(balCheck.diff)<=50000;
+      head='<div class="note">'+(ok?'<b style="color:#1d7a37">✓ Cuadra</b>':'<b style="color:#b3202b">✗ Descuadre de '+meur(balCheck.diff)+'</b>')+
+        ' — saldo real '+meur(balCheck.real)+', reconstruido '+meur(calc)+
+        ' a partir de '+rows.length+' movimientos desde el reinicio.</div>';
+    }
+    box.innerHTML=head+'<div style="margin-top:8px;max-height:420px;overflow-y:auto">'+
+      rows.map(r=>{
+        const p=allPlayers[r.player]||{};
+        const d=new Date(r.date*1000).toLocaleDateString('es-ES');
+        return '<div class="trow"><span><b>'+esc(p.name||('#'+r.player))+'</b> '+
+          '<span class="tt">'+r.type+(r.other?' · '+esc(r.other):'')+' · '+d+'</span></span>'+
+          '<span class="tb" style="color:'+(r.delta>0?'#1d7a37':'#b3202b')+'">'+(r.delta>0?'+':'')+meur(r.delta)+
+          '<br><span class="tt">saldo: '+meur(r.bal)+'</span></span></div>';
+      }).join('')+'</div>'+
+      '<div class="note" style="margin-top:8px">Revisa la lista contra lo que recuerdes que ha pasado de verdad. El movimiento donde el saldo reconstruido empiece a alejarse del real es el que no se está interpretando bien — pégame ese evento (desde «Ver respuesta cruda» de Ajustes, buscando su fecha) y lo corrijo con datos, no a ciegas.</div>';
+  }catch(err){ box.innerHTML='<div class="empty">Error: '+esc(err.message)+'</div>'; }
+}
+
+
+/* ============================================================
+   LIGA: evolucion de puntos por jornada, un icono al final
+   de cada linea marcando la posicion actual del equipo.
+   ============================================================ */
+function buildPointsSeries(){
+  const evs=[...loadArch().events].filter(e=>e.type==='roundFinished').sort((a,b)=>a.date-b.date);
+  const cum={}; teams.forEach(t=>cum[t.id]=0);
+  const rounds=[]; const series={}; teams.forEach(t=>series[t.id]=[]);
+  evs.forEach(ev=>{
+    const rd=ev.content&&ev.content.round;
+    let roundName='?';
+    if(rd){
+      if(rd.short) roundName=rd.short;
+      else if(rd.name){ const m=rd.name.match(/\d+/); roundName=m?('J'+m[0]):rd.name; }
+    }
+    rounds.push(roundName);
+    const results=(ev.content&&ev.content.results)||[];
+    teams.forEach(t=>{
+      const r=results.find(x=>x.user&&String(x.user.id)===String(t.id));
+      if(r&&r.points!=null) cum[t.id]+=r.points;
+      series[t.id].push(cum[t.id]);
+    });
+  });
+  return {rounds,series};
+}
+
+async function loadLiga(){
+  if(!connected()){show('ajustes');return}
+  $('bLiga').disabled=true;$('bLiga').textContent='…';
+  try{ await loadBase(); renderLiga(); }
+  catch(err){ $('lgWrap').innerHTML='<div class="card"><div class="empty">Error: '+esc(err.message)+'</div></div>'; }
+  $('bLiga').disabled=false;$('bLiga').textContent='Actualizar';
+}
+
+const LIGA_PALETTE=['#e2333f','#2b8fd6','#2fa84f','#e8a51c','#8e44ad','#16a085','#d35400',
+  '#c0392b','#2980b9','#27ae60','#f39c12','#7f8c8d','#e91e63'];
+
+function renderLiga(){
+  const {rounds,series}=buildPointsSeries();
+  if(!rounds.length){
+    $('lgWrap').innerHTML='<div class="card"><div class="empty">Aún no hay jornadas archivadas.<br>Ve a Ajustes → «Archivar histórico completo».</div></div>';
+    return;
+  }
+  const n=rounds.length;
+  const W=340,H=230,padL=26,padR=24,padT=12,padB=20;
+  const innerW=W-padL-padR, innerH=H-padT-padB;
+  const maxY=Math.max(1,...teams.map(t=>Math.max(...series[t.id])));
+  const xAt=i=>padL+(n<=1?innerW/2:(i/(n-1))*innerW);
+  const yAt=v=>padT+innerH-(v/maxY)*innerH;
+  const sorted=[...teams].sort((a,b)=>series[b.id].at(-1)-series[a.id].at(-1));
+
+  let svg='<svg viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block">';
+  [0,0.5,1].forEach(f=>{
+    const yy=padT+innerH-f*innerH;
+    svg+='<line x1="'+padL+'" y1="'+yy+'" x2="'+(W-padR)+'" y2="'+yy+'" stroke="#e2e6e9" stroke-width="1"/>';
+    svg+='<text x="'+(padL-4)+'" y="'+(yy+3)+'" font-size="7" text-anchor="end" fill="#9aa6ad">'+Math.round(f*maxY)+'</text>';
+  });
+  if(n>1) rounds.forEach((rn,i)=>{
+    if(n>10&&i%Math.ceil(n/8)!==0&&i!==n-1)return;
+    svg+='<text x="'+xAt(i)+'" y="'+(H-4)+'" font-size="6.5" text-anchor="middle" fill="#9aa6ad">'+esc(rn)+'</text>';
+  });
+
+  sorted.forEach((t,idx)=>{
+    const color=LIGA_PALETTE[idx%LIGA_PALETTE.length];
+    const me=String(t.id)===String(cfg.userId);
+    const pts=series[t.id].map((v,i)=>xAt(i)+','+yAt(v)).join(' ');
+    svg+='<polyline points="'+pts+'" fill="none" stroke="'+color+'" stroke-width="'+(me?3:1.6)+'" '+
+      'stroke-linejoin="round" stroke-linecap="round" opacity="'+(me?1:0.75)+'"/>';
+  });
+
+  sorted.forEach((t,idx)=>{
+    const lastV=series[t.id].at(-1);
+    const cx=xAt(n-1), cy=yAt(lastV), r=6;
+    const color=LIGA_PALETTE[idx%LIGA_PALETTE.length];
+    const img=IMG_USER(t.icon);
+    if(img){
+      svg+='<clipPath id="lgclip-'+t.id+'"><circle cx="'+cx+'" cy="'+cy+'" r="'+r+'"/></clipPath>';
+      svg+='<circle cx="'+cx+'" cy="'+cy+'" r="'+(r+1.6)+'" fill="#fff" stroke="'+color+'" stroke-width="1.6"/>';
+      svg+='<image href="'+img+'" x="'+(cx-r)+'" y="'+(cy-r)+'" width="'+(r*2)+'" height="'+(r*2)+'" '+
+        'clip-path="url(#lgclip-'+t.id+')" preserveAspectRatio="xMidYMid slice"/>';
+    }else{
+      svg+='<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="'+color+'"/>';
+      svg+='<text x="'+cx+'" y="'+(cy+2.3)+'" font-size="5.2" text-anchor="middle" fill="#fff" font-weight="700">'+esc(initials(t.name))+'</text>';
+    }
+  });
+  svg+='</svg>';
+
+  const legend='<div style="margin-top:10px">'+sorted.map((t,idx)=>{
+    const me=String(t.id)===String(cfg.userId);
+    const color=LIGA_PALETTE[idx%LIGA_PALETTE.length];
+    return '<div class="bidrow"><span><span style="display:inline-block;width:9px;height:9px;border-radius:50%;'+
+      'background:'+color+';margin-right:6px;vertical-align:middle"></span>'+esc(t.name)+
+      (me?' <span class="tag dark">tú</span>':'')+'</span><b>'+series[t.id].at(-1)+' pts</b></div>';
+  }).join('')+'</div>';
+
+  $('lgWrap').innerHTML='<div class="card">'+svg+legend+
+    '<div class="note" style="margin-top:8px">'+n+' jornada'+(n===1?'':'s')+' archivadas. '+
+    'El icono marca la posición y puntos actuales de cada equipo — la línea gruesa es la tuya.</div></div>';
+}
+
+$('bLiga').onclick=()=>loadLiga();
+
 /* ============================================================
    BOTONES + ARRANQUE
    ============================================================ */
 $('bResumen').onclick=()=>loadResumen();
+$('bTrail').onclick=()=>runBalanceTrail();
 $('bMercado').onclick=()=>loadMercado();
 $('bRivales').onclick=()=>loadRivales();
 $('bClaus').onclick=()=>loadClausulas();
+$('bDiagClause').onclick=()=>runClauseDiag();
 $('bHist').onclick=()=>loadHistorial();
 
 hydrate();
