@@ -100,8 +100,9 @@
     max-height:220px;font-family:var(--mono);white-space:pre-wrap;word-break:break-all}
 
   nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--line);
-    display:flex;padding:6px 4px calc(6px + env(safe-area-inset-bottom));z-index:20}
-  nav button{flex:1;background:none;border:none;color:var(--muted);font-size:.66rem;font-weight:700;
+    display:flex;padding:6px 2px calc(6px + env(safe-area-inset-bottom));z-index:20;
+    overflow-x:auto;-webkit-overflow-scrolling:touch}
+  nav button{flex:1 0 auto;min-width:56px;background:none;border:none;color:var(--muted);font-size:.66rem;font-weight:700;
     padding:6px 0 4px;margin:0;width:auto;border-top:2px solid transparent;border-radius:0}
   nav button.on{color:var(--red);border-top-color:var(--red)}
   nav button i{display:block;font-style:normal;font-size:1.05rem;margin-bottom:1px}
@@ -113,6 +114,13 @@
   .diagrow:last-child{border:none}
   .diagrow .dt{display:flex;justify-content:space-between;gap:8px}
   .diagrow .dd{color:var(--muted);font-size:.7rem;margin-top:2px}
+  .hbar{display:flex;align-items:center;gap:8px;padding:5px 0}
+  .hbar .hn{flex:0 0 108px;font-size:.72rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .hbar .ht{flex:1;background:#eceff1;border-radius:3px;height:14px;overflow:hidden}
+  .hbar .ht i{display:block;height:100%;background:var(--red);border-radius:3px}
+  .hbar .hv{flex:0 0 42px;text-align:right;font-family:var(--mono);font-size:.74rem;font-weight:700}
+  .prob{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--line)}
+  .prob:last-child{border:none}
   .trow{display:flex;justify-content:space-between;align-items:baseline;gap:8px;
     padding:7px 0;border-bottom:1px solid var(--line);font-size:.76rem}
   .trow:last-child{border:none}
@@ -179,6 +187,11 @@
   </div>
   <div id="rsWrap"><div class="card"><div class="empty">Cargando…</div></div></div>
   <div class="card"><div class="note" id="rsNote">—</div></div>
+  <div class="card">
+    <h3 style="margin:0 0 4px">Tesorería y previsión de jornada</h3>
+    <div id="tsWrap"><div class="empty">Pulsa «Actualizar» arriba.</div></div>
+  </div>
+
   <div class="card">
     <div class="rowtop"><h3 style="margin:0">Rastro de mi saldo</h3>
       <button class="sec" id="bTrail">Reconstruir</button></div>
@@ -261,6 +274,25 @@
   <div id="lgWrap"><div class="card"><div class="empty">Cargando…</div></div></div>
 </section>
 
+<!-- ============ VALOR (puntos por millón) ============ -->
+<section id="s-valor">
+  <div class="rowtop">
+    <span class="lbl">Puntos por millón</span>
+    <button class="sec" id="bValor">Actualizar</button>
+  </div>
+  <div class="chips" id="vlWho">
+    <div class="chip on" data-w="mine">Mi equipo</div>
+    <div class="chip" data-w="rivals">Resto de equipos</div>
+    <div class="chip" data-w="market">En mercado</div>
+  </div>
+  <div class="chips" id="vlSeason">
+    <div class="chip on" data-s="now">Esta temporada</div>
+    <div class="chip" data-s="prev">Pasada</div>
+    <div class="chip" data-s="both">Ambas</div>
+  </div>
+  <div id="vlWrap"><div class="card"><div class="empty">Pulsa «Actualizar».</div></div></div>
+</section>
+
 <!-- ============ ESTADÍSTICAS ============ -->
 <section id="s-stats">
   <div class="rowtop">
@@ -272,6 +304,7 @@
     <div class="chip" data-st="managers">Managers</div>
     <div class="chip" data-st="duelos">Duelos</div>
     <div class="chip" data-st="jugadores">Jugadores</div>
+    <div class="chip" data-st="clubes">Clubes</div>
     <div class="chip" data-st="liga">Pulso</div>
   </div>
   <div id="stWrap"><div class="card"><div class="empty">Pulsa «Calcular».<br>Cuanto más histórico tengas archivado, más jugosas.</div></div></div>
@@ -324,6 +357,7 @@
   <button id="nClausulas"><i>🔓</i>Cláusulas</button>
   <button id="nHistorial"><i>📜</i>Historial</button>
   <button id="nLiga"><i>📈</i>Liga</button>
+  <button id="nValor"><i>⚖</i>Valor</button>
   <button id="nStats"><i>📊</i>Stats</button>
 </nav>
 
@@ -446,6 +480,15 @@ const posBadge=p=>'<span class="pos p'+(p||0)+'">'+(POS[p]||'?')+'</span>';
 const H=()=>({'Authorization':'Bearer '+cfg.token,'X-League':cfg.leagueId,'X-User':cfg.userId,'X-Version':cfg.version,'X-Lang':'es'});
 async function api(path){const r=await fetch(cfg.workerUrl+path,{headers:H()});return r.json()}
 async function apiCF(path){const r=await fetch(cfg.workerUrl+path);return r.json()}
+async function apiPost(path,body){
+  const r=await fetch(cfg.workerUrl+path,{method:'POST',headers:{...H(),'Content-Type':'application/json'},body:JSON.stringify(body)});
+  return r.json();
+}
+// Numero REAL de pujas activas en este momento (sin nombres, Biwenger no los da mientras la subasta sigue abierta).
+async function realBidCount(playerId){
+  try{ const d=await apiPost('/as/api/v2/market/bids',{player:playerId}); return typeof d.data==='number'?d.data:null; }
+  catch{ return null; }
+}
 
 async function ensurePlayers(){
   if(Object.keys(allPlayers).length) return;
@@ -453,6 +496,112 @@ async function ensurePlayers(){
   allPlayers=dig(d,['data.players','players'])||{};
   Object.entries(allPlayers).forEach(([k,v])=>{if(v&&v.id==null)v.id=Number(k)});
   saveSnapshot();
+}
+
+
+/* ============================================================
+   ECONOMIA DE JORNADA
+   Formula confirmada contra los roundFinished archivados y contra
+   el tooltip "Abonos estimados" de Biwenger:
+     fijo 200.000 + (puntos x 50.000) + bonus por posicion
+     posicion: 400.000 el 1o, +100.000 por puesto, tope 1.400.000 (11o+)
+     extras: 300.000 por jugador en once ideal, 200.000 por MVP
+   ============================================================ */
+const PAY_FIXED=200000, PAY_PER_POINT=50000, PAY_POS_BASE=400000, PAY_POS_STEP=100000, PAY_POS_CAP=1400000;
+const SEASON_ROUNDS=38;
+const posBonus=p=>Math.min(PAY_POS_BASE+(p-1)*PAY_POS_STEP, PAY_POS_CAP);
+
+function roundsPlayed(){
+  return loadArch().events.filter(e=>e.type==='roundFinished').length;
+}
+function roundsLeft(){ return Math.max(1, SEASON_ROUNDS-roundsPlayed()); }
+
+/* Puntos esperados por jugador. Prioridad:
+   1) "fitness" (ultimas puntuaciones reales) si la API lo trae
+   2) media de la temporada (puntos totales / jornadas disputadas)
+   Devuelve null si no hay base -> se trata como 0 pero se avisa. */
+let XP_SOURCE='—';
+function expPoints(pid){
+  const p=allPlayers[pid]; if(!p) return null;
+  if(Array.isArray(p.fitness)){
+    const v=p.fitness.filter(x=>typeof x==='number');
+    if(v.length){ XP_SOURCE='forma reciente'; return v.reduce((a,b)=>a+b,0)/v.length; }
+  }
+  const r=roundsPlayed();
+  if(p.points!=null&&r>0){ XP_SOURCE='media de temporada'; return p.points/r; }
+  return null;
+}
+
+/* Once probable de un equipo: minimos por posicion y luego los mejores. */
+const XI_MIN={1:1,2:3,3:3,4:1};
+function bestXI(teamId){
+  const sq=(squads[teamId]||[]).map(p=>({...p,xp:expPoints(p.id)??0}));
+  if(!sq.length) return [];
+  const byPos={1:[],2:[],3:[],4:[]};
+  sq.forEach(p=>{ if(byPos[p.position]) byPos[p.position].push(p); });
+  Object.values(byPos).forEach(a=>a.sort((x,y)=>y.xp-x.xp));
+  const xi=[], used=new Set();
+  Object.keys(XI_MIN).forEach(k=>{
+    byPos[k].slice(0,XI_MIN[k]).forEach(p=>{ xi.push(p); used.add(p.id); });
+  });
+  const rest=sq.filter(p=>!used.has(p.id)&&p.position!==1).sort((a,b)=>b.xp-a.xp);
+  while(xi.length<11&&rest.length) xi.push(rest.shift());
+  return xi;
+}
+const projPoints=teamId=>bestXI(teamId).reduce((a,p)=>a+p.xp,0);
+
+/* Prevision de ingreso de la proxima jornada para TODOS los equipos.
+   El bonus de posicion depende de donde quedes, asi que hay que
+   proyectar a todos para saber el puesto de cada uno. */
+function incomeForecast(){
+  const proj={}; teams.forEach(t=>proj[t.id]=projPoints(t.id));
+  const order=[...teams].sort((a,b)=>proj[b.id]-proj[a.id]);
+  const out={};
+  order.forEach((t,i)=>{
+    const pts=proj[t.id];
+    out[t.id]={pts,pos:i+1,income:PAY_FIXED+Math.round(pts)*PAY_PER_POINT+posBonus(i+1)};
+  });
+  return out;
+}
+
+/* Que vender para tapar un descubierto, ordenado por coste deportivo:
+   primero lo que no juega (no resta puntos), luego lo mas prescindible
+   por euro liberado. Respeta un minimo de plantilla. */
+const MIN_SQUAD=11;
+function sellSuggestions(deficit){
+  const xi=new Set(bestXI(cfg.userId).map(p=>p.id));
+  const sq=(squads[cfg.userId]||[]).filter(p=>p.price);
+  const maxSell=Math.max(0, sq.length-MIN_SQUAD);
+  const cand=sq.map(p=>{
+    const xp=expPoints(p.id)??0, inXI=xi.has(p.id);
+    return {...p,xp,inXI,cost:(inXI?xp:0)/Math.max(0.1,p.price/1e6)};
+  }).sort((a,b)=>a.cost-b.cost||b.price-a.price);
+  const picks=[]; let got=0;
+  for(const p of cand){
+    if(got>=deficit||picks.length>=maxSell) break;
+    picks.push(p); got+=p.price;
+  }
+  return {picks,got,maxSell,covered:got>=deficit};
+}
+
+/* Rentabilidad de un fichaje: solo puntuan 11, asi que lo que aporta
+   no son sus puntos, sino los que suma POR ENCIMA del titular al que
+   desplazaria. Mas la parte financiera (revalorizacion menos precio). */
+function bidValue(pid,bidPrice){
+  const xp=expPoints(pid)??0;
+  const xi=bestXI(cfg.userId);
+  const pos=allPlayers[pid]?.position;
+  const sameP=xi.filter(p=>p.position===pos).sort((a,b)=>a.xp-b.xp)[0];
+  const worst=[...xi].sort((a,b)=>a.xp-b.xp)[0];
+  const repl=sameP||worst;
+  const marg=Math.max(0,xp-(repl?repl.xp:0));
+  const perRound=marg*PAY_PER_POINT;
+  const inc=allPlayers[pid]?.priceIncrement||0;
+  // inercia amortiguada: el ritmo diario no se mantiene indefinidamente
+  const resale=(allPlayers[pid]?.price||bidPrice)+inc*10;
+  const financial=resale-bidPrice;
+  const payback=perRound>0?Math.ceil(Math.max(0,-financial)/perRound):null;
+  return {xp,marg,perRound,financial,repl,payback};
 }
 
 /* ============================================================
@@ -654,7 +803,17 @@ function bidders(pid,price){
   });
   return out.sort((a,b)=>b.mu-a.mu);
 }
-function winProb(x,bs){
+/* Si Biwenger nos dice cuantas pujas hay REALMENTE (endpoint market/bids),
+   desaparece la mayor incognita del modelo: quien se presenta. Pasamos de
+   "cada rival puja con probabilidad X" a "son exactamente N, y son los N
+   mas probables" -> maximo de N muestras, mucho menos ruidoso. */
+function winProb(x,bs,knownN){
+  if(knownN!=null&&knownN>0){
+    const top=bs.slice(0,Math.min(knownN,bs.length));
+    if(!top.length) return 0.95;
+    let p=1; top.forEach(b=>{ p*=cdf(x,b.mu,0.16); });
+    return p;
+  }
   let p=1;
   bs.forEach(b=>{
     const pParticipa=b.partRate;
@@ -663,27 +822,28 @@ function winProb(x,bs){
   });
   return p;
 }
-function recommendBid(pid,price,myCeiling){
+function recommendBid(pid,price,myCeiling,knownN){
   const target=(cfg.target??75)/100;
   const bs=bidders(pid,price);
-  if(!bs.length) return {bs,rec:price+1,p:0.95,curve:[],alone:true};
+  if(knownN===0) return {bs,rec:price+1,p:0.95,curve:[],alone:true,knownN};
+  if(!bs.length) return {bs,rec:price+1,p:0.95,curve:[],alone:true,knownN};
   let rec=null;
   for(let x=price; x<=price*3; x+=Math.max(price*0.005,1000)){
-    if(winProb(x,bs)>=target){rec=Math.round(x);break}
+    if(winProb(x,bs,knownN)>=target){rec=Math.round(x);break}
   }
   if(rec==null)rec=Math.round(price*3);
   // rival top "redondo" → basta superarle por poco
   const top=bs[0];
   if(top.sniper!=null&&top.sniper<0.25&&top.mu>price) rec=Math.min(rec,Math.round(top.mu)+1000);
   if(myCeiling)rec=Math.min(rec,myCeiling);
-  const curve=[1.00,1.10,1.20,1.35,1.50].map(f=>({f,x:Math.round(price*f),p:winProb(price*f,bs)}));
-  return {bs,rec,p:winProb(rec,bs),curve,alone:false,over:rec/price};
+  const curve=[1.00,1.10,1.20,1.35,1.50].map(f=>({f,x:Math.round(price*f),p:winProb(price*f,bs,knownN)}));
+  return {bs,rec,p:winProb(rec,bs,knownN),curve,alone:false,over:rec/price,knownN};
 }
 
 /* ============================================================
    NAVEGACIÓN
    ============================================================ */
-const SECTIONS=['resumen','mercado','rivales','clausulas','historial','liga','stats','ajustes'];
+const SECTIONS=['resumen','mercado','rivales','clausulas','historial','liga','valor','stats','ajustes'];
 function show(name){
   SECTIONS.forEach(s=>{
     $('s-'+s).classList.toggle('active',s===name);
@@ -696,6 +856,7 @@ function show(name){
   if(name==='clausulas')loadClausulas();
   if(name==='historial')loadHistorial();
   if(name==='liga')loadLiga();
+  if(name==='valor')loadValor();
   if(name==='stats')loadStats();
 }
 SECTIONS.forEach(s=>$('n'+s.charAt(0).toUpperCase()+s.slice(1)).onclick=()=>show(s));
@@ -881,6 +1042,9 @@ async function loadMercado(){
       clause:dig(s,['player.owner.clause'])
     })).filter(x=>x.id);
 
+    // Numero real de pujas activas ahora mismo (Biwenger da el conteo, no los nombres).
+    await Promise.all(market.map(async m=>{ m.realBids = await realBidCount(m.id); }));
+
     renderMercado(bal,maxBid);
   }catch(err){
     $('mktWrap').innerHTML='';
@@ -917,9 +1081,10 @@ function renderMercado(bal,maxBid){
 
   // ordenar por "oportunidad": pocos rivales creíbles y buen momentum
   const rows=market.map(m=>{
-    const r=recommendBid(m.id,m.price,myCeil);
-    return {...m,...r};
-  }).sort((a,b)=>a.bs.length-b.bs.length||b.price-a.price);
+    const r=recommendBid(m.id,m.price,myCeil,m.realBids);
+    const v=bidValue(m.id,r.rec);
+    return {...m,...r,val:v};
+  }).sort((a,b)=>(b.val.perRound-a.val.perRound)||a.bs.length-b.bs.length);
 
   rows.forEach(m=>{
     const p=allPlayers[m.id]||{};
@@ -942,9 +1107,18 @@ function renderMercado(bal,maxBid){
       '<div class="kpis">'+
         '<div class="kpi"><div class="v" style="color:'+(affordable&&!tooMuch?'var(--red)':'var(--muted)')+'">'+meur(m.rec)+'</div><div class="k">Puja sugerida</div></div>'+
         '<div class="kpi"><div class="v" style="font-size:.74rem">'+bd.t+'</div><div class="k">'+Math.round(m.p*100)+'% · conf. '+cf2.t+'</div></div>'+
-        '<div class="kpi"><div class="v">'+m.bs.length+'</div><div class="k">Rivales</div></div>'+
+        '<div class="kpi"><div class="v">'+(m.realBids!=null?m.realBids:'—')+'</div><div class="k">Pujas reales</div></div>'+
       '</div>'+
-      (tooMuch?'<div class="note" style="margin-top:8px;color:#b3202b"><b>⚠ '+pct(m.over-1)+' sobre su valor.</b> Para llegar a tu objetivo del '+(cfg.target??75)+'% hay que sobrepagar. Considera bajar el objetivo o dejarlo pasar.</div>':'');
+      (tooMuch?'<div class="note" style="margin-top:8px;color:#b3202b"><b>⚠ '+pct(m.over-1)+' sobre su valor.</b> Para llegar a tu objetivo del '+(cfg.target??75)+'% hay que sobrepagar. Considera bajar el objetivo o dejarlo pasar.</div>':'')+
+      (m.realBids!=null?'<div class="note" style="margin-top:6px">Ahora mismo hay <b>'+m.realBids+'</b> puja'+(m.realBids===1?'':'s')+' real'+(m.realBids===1?'':'es')+' activa'+(m.realBids===1?'':'s')+' — probabilidad calculada sobre esos '+m.realBids+', no sobre los '+m.bs.length+' que <i>podrían</i> pujar.</div>':'')+
+      // --- rentabilidad del fichaje ---
+      '<div class="note" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--line)">'+
+        (m.val.marg>0
+          ? '<b style="color:#1d7a37">+'+eur(Math.round(m.val.perRound))+' por jornada.</b> Le saca <b>'+m.val.marg.toFixed(1).replace('.',',')+' pts</b> a '+esc(m.val.repl?m.val.repl.name:'tu peor titular')+', al que desplazaría del once.'
+          : '<b style="color:#b3202b">No mejora tu once.</b> '+(m.val.repl?'Tu '+esc(m.val.repl.name)+' ya rinde igual o más':'No entraría de titular')+', así que no suma ingresos por puntos.')+
+        ' · Reventa a 10 días: <b style="color:'+(m.val.financial>=0?'#1d7a37':'#b3202b')+'">'+(m.val.financial>=0?'+':'')+eur(Math.round(m.val.financial))+'</b>'+
+        (m.val.payback?' · se amortiza en <b>'+m.val.payback+'</b> jornada'+(m.val.payback===1?'':'s'):'')+
+      '</div>';
 
     if(m.alone){
       html+='<div class="note" style="margin-top:8px">Nadie más puede pagarlo ahora mismo. Puja mínima y listo.</div>';
@@ -1428,6 +1602,29 @@ function renderStats(){
     h+=mk2('🧨 Peores compras de la liga',[...g].reverse().filter(x=>x.delta<0),'Los que se compraron caro y no levantan cabeza.');
   }
 
+  if(stMode==='clubes'){
+    const {out,nRounds}=clubStats();
+    if(!nRounds){
+      h+='<div class="card"><div class="empty">Aún no hay jornadas archivadas.</div></div>';
+    }else{
+      const bars=(title,note,valOf,fmt)=>{
+        const arr=[...teams].sort((a,b)=>valOf(out[b.id])-valOf(out[a.id]));
+        const mx=Math.max(...arr.map(t=>valOf(out[t.id])),1);
+        return '<div class="card"><h3>'+title+'</h3><div class="note">'+note+'</div><div style="margin-top:8px">'+
+          arr.map(t=>{const v=valOf(out[t.id]);
+            const me=String(t.id)===String(cfg.userId);
+            return '<div class="hbar"><div class="hn"'+(me?' style="font-weight:800"':'')+'>'+esc(t.name)+'</div>'+
+              '<div class="ht"><i style="width:'+Math.round(v/mx*100)+'%'+(me?';background:var(--black)':'')+'"></i></div>'+
+              '<div class="hv">'+fmt(v)+'</div></div>';
+          }).join('')+'</div></div>';
+      };
+      h+=bars('\ud83c\udfc6 Jornadas ganadas','Veces que ha sido el equipo más puntuado de la jornada. '+nRounds+' jornadas disputadas.',
+        o=>o.wins, v=>v);
+      h+=bars('\ud83d\udcaa Techo de puntuación','Su mejor jornada hasta ahora.', o=>o.max, v=>v);
+      h+=bars('\ud83d\udcca Promedio por jornada','Media de puntos por jornada.', o=>o.avg, v=>v.toFixed(1).replace('.',','));
+    }
+  }
+
   if(stMode==='liga'){
     const cash=ST.totalCash, val=ST.totalValue;
     h+='<div class="card"><h3>Pulso económico</h3><div class="kpis" style="margin-top:10px">'+
@@ -1490,6 +1687,62 @@ async function loadResumen(){
   $('bResumen').disabled=false;$('bResumen').textContent='Actualizar';
 }
 
+
+/* ---- Tesoreria: prevision de ingreso, descubierto y que vender ---- */
+function renderTreasury(){
+  const box=$('tsWrap'); if(!box) return;
+  if(!teams.length||!squads[cfg.userId]){ box.innerHTML='<div class="empty">Sin datos todavía.</div>'; return; }
+  const fc=incomeForecast(), mine=fc[cfg.userId];
+  const bal=balCheck?balCheck.real:(balances[cfg.userId]??0);
+  const spend=Number(cfg.spend||0);
+  const after=bal-spend+ (mine?mine.income:0);
+  const deficit=after<0?-after:0;
+  const rl=roundsLeft();
+
+  let h='<div class="kpis" style="margin-top:8px">'+
+    '<div class="kpi"><div class="v">'+meur(bal)+'</div><div class="k">Saldo hoy</div></div>'+
+    '<div class="kpi"><div class="v" style="color:#1d7a37">+'+meur(mine?mine.income:0)+'</div><div class="k">Ingreso previsto</div></div>'+
+    '<div class="kpi"><div class="v">'+(mine?Math.round(mine.pts):'—')+'</div><div class="k">Pts previstos</div></div>'+
+    '</div>';
+
+  h+='<div class="note" style="margin-top:8px">Desglose: fijo '+eur(PAY_FIXED)+
+     ' + '+(mine?Math.round(mine.pts):0)+' pts \u00d7 '+eur(PAY_PER_POINT)+
+     ' + '+eur(mine?posBonus(mine.pos):0)+' por quedar <b>'+(mine?mine.pos:'?')+'\u00ba</b> en la jornada.</div>';
+
+  h+='<label for="fSpend" style="margin-top:12px">Gasto que estás valorando (pujas, cláusulas)</label>'+
+     '<input id="fSpend" inputmode="numeric" placeholder="0" value="'+(spend||'')+'">';
+
+  h+='<div class="note" style="margin-top:10px">Saldo tras el gasto y el ingreso: <b style="color:'+
+     (after<0?'#b3202b':'#1d7a37')+'">'+meur(after)+'</b></div>';
+
+  if(deficit>0){
+    const sug=sellSuggestions(deficit);
+    h+='<div class="note" style="margin-top:8px;color:#b3202b"><b>\u26a0 Descubierto de '+meur(deficit)+'.</b> '+
+       (sug.covered?'Se cubre vendiendo:':'No llegas ni vendiendo lo prescindible (máximo '+sug.maxSell+' ventas sin bajar de '+MIN_SQUAD+' jugadores):')+'</div>'+
+       '<div style="margin-top:6px">'+sug.picks.map(x=>
+         '<div class="plr">'+faceHTML(x.id,x.name)+
+         '<div class="mid"><div class="nm">'+esc(x.name)+'</div>'+
+         '<div class="sb">'+posBadge(x.position)+(x.inXI?'<span class="tag dn">titular · '+x.xp.toFixed(1).replace('.',',')+' pts</span>':'<span class="tag up">suplente · no resta puntos</span>')+'</div></div>'+
+         '<div class="rt"><div class="eur">'+meur(x.price)+'</div><div class="sub2">venta rápida '+meur(x.price*0.5)+'</div></div></div>').join('')+'</div>'+
+       '<div class="note" style="margin-top:6px">Ordenado por coste deportivo: primero lo que no juega. La «venta rápida» es al 50%, según el ajuste de tu liga.</div>';
+  }
+
+  h+='<div class="note" style="margin-top:10px">Puntos estimados con <b>'+XP_SOURCE+'</b> sobre '+roundsPlayed()+
+     ' jornada'+(roundsPlayed()===1?'':'s')+' disputada'+(roundsPlayed()===1?'':'s')+', quedan '+rl+'. '+
+     'Con tan pocos partidos la varianza es enorme: tómalo como orden de magnitud, no como cifra fina.</div>';
+
+  h+='<details style="margin-top:8px"><summary>Previsión de todos los equipos</summary><div style="margin-top:6px">'+
+     [...teams].sort((a,b)=>fc[b.id].income-fc[a.id].income).map(t=>
+       '<div class="bidrow"><span>'+esc(t.name)+' <span class="tag">'+fc[t.id].pos+'\u00ba \u00b7 '+Math.round(fc[t.id].pts)+' pts</span></span>'+
+       '<b>'+meur(fc[t.id].income)+'</b></div>').join('')+
+     '<div class="note" style="margin-top:6px">Ojo: el bonus por posición es <b>inverso</b> — cuanto peor quedas, más cobras (400k el 1º, hasta 1,4M del 11º en adelante). Subir un puesto te cuesta 100k de compensación, así que ganar la jornada renta menos de lo que parece.</div>'+
+     '</div></details>';
+
+  box.innerHTML=h;
+  const inp=$('fSpend');
+  if(inp) inp.onchange=()=>{ cfg.spend=Number(inp.value.replace(/\D/g,''))||0; saveCfg(); renderTreasury(); };
+}
+
 function renderResumen(){
   if(!teams.length){$('rsWrap').innerHTML='<div class="card"><div class="empty">Sin datos. Pulsa «Actualizar».</div></div>';return}
   const rows=teams.map(t=>({...t,
@@ -1535,6 +1788,7 @@ function renderResumen(){
   }
   note+='<br><br>El saldo de los rivales es <b>calculado</b> a partir del histórico, no un dato que Biwenger publique.';
   $('rsNote').innerHTML=note;
+  renderTreasury();
 }
 
 /* ---- filtros de historial ---- */
@@ -1696,6 +1950,126 @@ async function runBalanceTrail(){
 }
 
 
+
+/* ============================================================
+   PUNTOS POR JORNADA Y EQUIPO (base de stats y prediccion)
+   ============================================================ */
+function roundPointsMatrix(){
+  const evs=[...loadArch().events].filter(e=>e.type==='roundFinished').sort((a,b)=>a.date-b.date);
+  const rounds=[], per={}; teams.forEach(t=>per[t.id]=[]);
+  evs.forEach(ev=>{
+    const rd=ev.content&&ev.content.round;
+    let rn='?'; if(rd){ if(rd.short)rn=rd.short; else if(rd.name){const m=rd.name.match(/\d+/); rn=m?('J'+m[0]):rd.name;} }
+    rounds.push(rn);
+    const res=(ev.content&&ev.content.results)||[];
+    teams.forEach(t=>{
+      const r=res.find(x=>x.user&&String(x.user.id)===String(t.id));
+      per[t.id].push(r&&r.points!=null?r.points:null);
+    });
+  });
+  return {rounds,per};
+}
+
+function clubStats(){
+  const {rounds,per}=roundPointsMatrix();
+  const out={};
+  teams.forEach(t=>{
+    const v=per[t.id].filter(x=>x!=null);
+    out[t.id]={n:v.length,wins:0,max:v.length?Math.max(...v):0,
+      avg:v.length?v.reduce((a,b)=>a+b,0)/v.length:0,vals:v};
+  });
+  rounds.forEach((_,i)=>{
+    let best=null,bestV=-1e9;
+    teams.forEach(t=>{ const v=per[t.id][i]; if(v!=null&&v>bestV){bestV=v;best=t.id} });
+    if(best!=null) out[best].wins++;
+  });
+  return {out,nRounds:rounds.length};
+}
+
+/* ============================================================
+   PREDICCION DE CLASIFICACION (encogimiento + Monte Carlo)
+   ============================================================ */
+const WINTER_ROUND=19;   // cierre de la primera vuelta
+
+function shrinkageModel(){
+  const {per}=roundPointsMatrix();
+  const data=teams.map(t=>({id:t.id,v:per[t.id].filter(x=>x!=null),value:t.teamValue||0}));
+  const withData=data.filter(d=>d.v.length>0);
+  if(!withData.length) return null;
+  const n=Math.min(...withData.map(d=>d.v.length))||1;
+  const means={}; withData.forEach(d=>means[d.id]=d.v.reduce((a,b)=>a+b,0)/d.v.length);
+  const gm=Object.values(means).reduce((a,b)=>a+b,0)/withData.length;
+
+  // varianza interna (semana a semana, dentro de cada equipo)
+  let wsum=0,wn=0;
+  withData.forEach(d=>{
+    if(d.v.length<2)return;
+    const m=means[d.id];
+    wsum+=d.v.reduce((a,x)=>a+(x-m)*(x-m),0)/(d.v.length-1); wn++;
+  });
+  const withinVar=wn?wsum/wn:225;           // sin datos: sd 15 por defecto
+  // varianza observada entre medias de equipo
+  const obsVar=withData.reduce((a,d)=>a+Math.pow(means[d.id]-gm,2),0)/Math.max(1,withData.length-1);
+  const trueVar=Math.max(1,obsVar-withinVar/Math.max(1,n));
+  const lambda=trueVar/(trueVar+withinVar/Math.max(1,n));
+
+  // regresion de media de puntos sobre valor de plantilla -> hacia donde encoger
+  const xs=withData.map(d=>d.value), ys=withData.map(d=>means[d.id]);
+  const mx=xs.reduce((a,b)=>a+b,0)/xs.length, my=ys.reduce((a,b)=>a+b,0)/ys.length;
+  let num=0,den=0;
+  xs.forEach((x,i)=>{num+=(x-mx)*(ys[i]-my); den+=(x-mx)*(x-mx)});
+  const slope=den>0?num/den:0, intercept=my-slope*mx;
+  let ssTot=0,ssRes=0;
+  xs.forEach((x,i)=>{const pred=intercept+slope*x; ssTot+=Math.pow(ys[i]-my,2); ssRes+=Math.pow(ys[i]-pred,2)});
+  const r2=ssTot>0?Math.max(0,1-ssRes/ssTot):0;
+
+  const rate={};
+  teams.forEach(t=>{
+    const target=intercept+slope*(t.teamValue||0);     // nivel esperado por valor
+    const m=means[t.id]!=null?means[t.id]:gm;
+    rate[t.id]=lambda*m+(1-lambda)*target;
+  });
+  return {rate,lambda,withinVar,trueVar,r2,slope,gm,n,means};
+}
+
+function simulateSeason(sims){
+  const M=shrinkageModel(); if(!M) return null;
+  const played=roundsPlayed();
+  const toWinter=Math.max(0,WINTER_ROUND-played);
+  const toEnd=Math.max(0,SEASON_ROUNDS-played);
+  const sd=Math.sqrt(M.withinVar);
+  const base={}; teams.forEach(t=>base[t.id]=t.points||0);
+  const cnt={}; teams.forEach(t=>cnt[t.id]={w1:0,w2:0,w3:0,e1:0,e2:0,e3:0,sumE:0,sumW:0});
+  const ids=teams.map(t=>t.id);
+
+  const gauss=()=>{ let u=0,v=0; while(!u)u=Math.random(); while(!v)v=Math.random();
+    return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v); };
+
+  for(let s=0;s<sims;s++){
+    const win={},end={};
+    ids.forEach(id=>{
+      let acc=base[id];
+      for(let r=0;r<toWinter;r++) acc+=M.rate[id]+gauss()*sd;
+      win[id]=acc;
+      for(let r=toWinter;r<toEnd;r++) acc+=M.rate[id]+gauss()*sd;
+      end[id]=acc;
+      cnt[id].sumW+=win[id]; cnt[id].sumE+=end[id];
+    });
+    const ow=[...ids].sort((a,b)=>win[b]-win[a]);
+    const oe=[...ids].sort((a,b)=>end[b]-end[a]);
+    cnt[ow[0]].w1++; if(ow[1])cnt[ow[1]].w2++; if(ow[2])cnt[ow[2]].w3++;
+    cnt[oe[0]].e1++; if(oe[1])cnt[oe[1]].e2++; if(oe[2])cnt[oe[2]].e3++;
+  }
+  const res={};
+  ids.forEach(id=>{
+    const c=cnt[id];
+    res[id]={champWinter:c.w1/sims,podiumWinter:(c.w1+c.w2+c.w3)/sims,
+      champEnd:c.e1/sims,podiumEnd:(c.e1+c.e2+c.e3)/sims,
+      projWinter:c.sumW/sims,projEnd:c.sumE/sims};
+  });
+  return {res,model:M,toWinter,toEnd,played,sd};
+}
+
 /* ============================================================
    LIGA: evolucion de puntos por jornada, un icono al final
    de cada linea marcando la posicion actual del equipo.
@@ -1732,6 +2106,56 @@ async function loadLiga(){
 
 const LIGA_PALETTE=['#e2333f','#2b8fd6','#2fa84f','#e8a51c','#8e44ad','#16a085','#d35400',
   '#c0392b','#2980b9','#27ae60','#f39c12','#7f8c8d','#e91e63'];
+
+
+function pctTxt(x){ return (x*100).toFixed(x>=0.1?0:1).replace('.',',')+'%'; }
+
+function renderPrediction(){
+  const S=simulateSeason(3000);
+  if(!S) return '<div class="card"><div class="empty">Faltan jornadas archivadas para predecir.</div></div>';
+  const {res,model:M,toWinter,toEnd,played,sd}=S;
+  const byEnd=[...teams].sort((a,b)=>res[b.id].champEnd-res[a.id].champEnd||res[b.id].projEnd-res[a.id].projEnd);
+  const byWin=[...teams].sort((a,b)=>res[b.id].champWinter-res[a.id].champWinter||res[b.id].projWinter-res[a.id].projWinter);
+
+  const row=(t,pC,pP,proj)=>{
+    const d=daysSince(t.lastAccess);
+    const flags=(t.teamSize!=null&&t.teamSize<11?' <span class="tag dn">'+t.teamSize+' jug.</span>':'')+
+      (d!=null&&d>=7?' <span class="tag hot">'+d+'d sin entrar</span>':'');
+    return '<div class="prob">'+userFaceHTML(t.icon,t.name).replace('class="face"','class="face" style="width:22px;height:22px;font-size:.55rem"')+
+      '<div class="mid" style="flex:1;min-width:0"><div class="nm2">'+esc(t.name)+
+      (String(t.id)===String(cfg.userId)?' <span class="tag dark">tú</span>':'')+flags+'</div>'+
+      '<div class="bar" style="margin-top:4px"><i style="width:'+Math.round(pC*100)+'%"></i></div></div>'+
+      '<div class="rt2"><div class="tot">'+pctTxt(pC)+'</div><div class="delta fl">'+Math.round(proj)+' pts</div></div></div>';
+  };
+
+  let h='<span class="lbl" style="margin-top:6px">Campeón de invierno (J'+WINTER_ROUND+')</span>'+
+    '<div class="card">'+byWin.slice(0,5).map(t=>row(t,res[t.id].champWinter,res[t.id].podiumWinter,res[t.id].projWinter)).join('')+
+    '<div class="note" style="margin-top:8px">Quedan <b>'+toWinter+'</b> jornadas para el cierre de la primera vuelta.</div></div>';
+
+  h+='<span class="lbl">Campeón de liga (J'+SEASON_ROUNDS+')</span>'+
+    '<div class="card">'+byEnd.slice(0,5).map(t=>row(t,res[t.id].champEnd,res[t.id].podiumEnd,res[t.id].projEnd)).join('')+
+    '<details style="margin-top:8px"><summary>Ver los 13 equipos con probabilidad de podio</summary><div style="margin-top:6px">'+
+    byEnd.map(t=>'<div class="bidrow"><span>'+esc(t.name)+'</span><b>'+pctTxt(res[t.id].champEnd)+' campeón · '+pctTxt(res[t.id].podiumEnd)+' podio</b></div>').join('')+
+    '</div></details></div>';
+
+  h+='<div class="card"><h3>Cómo se calcula</h3>'+
+    '<div class="note" style="margin-top:6px">'+
+    'Con <b>'+played+'</b> jornada'+(played===1?'':'s')+' jugada'+(played===1?'':'s')+' no se puede extrapolar la media directamente: sería confundir suerte con nivel. '+
+    'Cada equipo se estima mezclando su media con el nivel que le corresponde por valor de plantilla:<br><br>'+
+    '<b>Peso dado a su propia media (λ): '+pctTxt(M.lambda)+'</b> — el resto se arrastra hacia lo esperable. '+
+    (M.lambda<0.5?'Bajo: la diferencia entre equipos aún parece más ruido que nivel.':'Alto: las diferencias entre equipos ya se sostienen.')+'<br>'+
+    '<b>El valor de plantilla explica el '+pctTxt(M.r2)+'</b> de las diferencias de puntos. '+
+    (M.r2<0.2?'Poco: apenas se usa como referencia.':'Se usa como ancla de la predicción.')+'<br>'+
+    '<b>Ruido semanal: ±'+Math.round(sd)+' pts</b> por jornada y equipo.<br><br>'+
+    'Con eso se simulan <b>3.000 temporadas</b> completas y se cuenta cuántas gana cada uno. '+
+    'Por eso verás porcentajes y no un campeón: a '+toEnd+' jornadas vista, la incertidumbre acumulada (±'+
+    Math.round(sd*Math.sqrt(toEnd))+' pts) es mayor que las distancias actuales.'+
+    '</div>'+
+    '<div class="note" style="margin-top:8px;color:#b3202b"><b>Fuera del modelo, a propósito:</b> los avisos de «sin entrar» y de plantillas cortas señalan riesgos reales '+
+    '(no alinear, no poder completar el once) que aún no están en el histórico. Ponerles un peso inventado sería peor que señalarlos.</div>'+
+    '</div>';
+  return h;
+}
 
 function renderLiga(){
   const {rounds,series}=buildPointsSeries();
@@ -1793,10 +2217,104 @@ function renderLiga(){
 
   $('lgWrap').innerHTML='<div class="card">'+svg+legend+
     '<div class="note" style="margin-top:8px">'+n+' jornada'+(n===1?'':'s')+' archivadas. '+
-    'El icono marca la posición y puntos actuales de cada equipo — la línea gruesa es la tuya.</div></div>';
+    'El icono marca la posición y puntos actuales de cada equipo — la línea gruesa es la tuya.</div></div>'
+    + renderPrediction();
 }
 
 $('bLiga').onclick=()=>loadLiga();
+
+
+/* ============================================================
+   VALOR: puntos por millon de euros
+   ============================================================ */
+let vlWho='mine', vlSeason='now';
+document.querySelectorAll('#vlWho .chip').forEach(c=>c.onclick=()=>{
+  document.querySelectorAll('#vlWho .chip').forEach(x=>x.classList.remove('on'));
+  c.classList.add('on'); vlWho=c.dataset.w; renderValor();
+});
+document.querySelectorAll('#vlSeason .chip').forEach(c=>c.onclick=()=>{
+  document.querySelectorAll('#vlSeason .chip').forEach(x=>x.classList.remove('on'));
+  c.classList.add('on'); vlSeason=c.dataset.s; renderValor();
+});
+
+/* Puntos segun la temporada elegida. Los de la temporada pasada solo
+   estan disponibles si la API los incluye en el volcado de jugadores;
+   si no, se avisa en vez de mostrar ceros enganosos. */
+function seasonPoints(pid,which){
+  const p=allPlayers[pid]; if(!p) return null;
+  const now=p.points!=null?p.points:null;
+  const prev=(p.pointsLastSeason!=null?p.pointsLastSeason:
+             (p.lastSeasonPoints!=null?p.lastSeasonPoints:null));
+  if(which==='now') return now;
+  if(which==='prev') return prev;
+  if(now==null&&prev==null) return null;
+  return (now||0)+(prev||0);
+}
+const hasPrevSeason=()=>Object.values(allPlayers).some(p=>p&&(p.pointsLastSeason!=null||p.lastSeasonPoints!=null));
+
+async function loadValor(){
+  if(!connected()){show('ajustes');return}
+  $('bValor').disabled=true;$('bValor').textContent='…';
+  try{ await loadBase(); renderValor(); }
+  catch(err){ $('vlWrap').innerHTML='<div class="card"><div class="empty">Error: '+esc(err.message)+'</div></div>'; }
+  $('bValor').disabled=false;$('bValor').textContent='Actualizar';
+}
+
+function renderValor(){
+  if(!teams.length){ $('vlWrap').innerHTML='<div class="card"><div class="empty">Sin datos. Pulsa «Actualizar».</div></div>'; return; }
+  if((vlSeason==='prev'||vlSeason==='both')&&!hasPrevSeason()){
+    $('vlWrap').innerHTML='<div class="card"><div class="note">Biwenger no incluye los puntos de la temporada pasada en el volcado general de jugadores, '+
+      'así que esta vista no se puede calcular con lo que tenemos. Vuelve a «Esta temporada».<br><br>'+
+      'Se podría añadir capturando el endpoint de ficha individual de jugador (el que devuelve el histórico por temporadas), '+
+      'pero requiere una petición por jugador — viable para tu plantilla, no para los 500 de la liga.</div></div>';
+    return;
+  }
+
+  let list=[];
+  if(vlWho==='mine'){
+    list=(squads[cfg.userId]||[]).map(p=>({...p,owner:'—'}));
+  }else if(vlWho==='rivals'){
+    teams.forEach(t=>{ if(String(t.id)===String(cfg.userId))return;
+      (squads[t.id]||[]).forEach(p=>list.push({...p,owner:t.name})); });
+  }else{
+    list=market.map(m=>{
+      const i=allPlayers[m.id]||{};
+      return {id:m.id,name:i.name||('#'+m.id),position:i.position,team:dig(i,['team.name'])||'',
+        price:m.price,owner:m.seller||'mercado libre'};
+    });
+  }
+
+  const rows=list.map(p=>{
+    const pts=seasonPoints(p.id,vlSeason);
+    const price=p.price||allPlayers[p.id]?.price||0;
+    const ppm=(pts!=null&&price>0)?pts/(price/1e6):null;
+    return {...p,pts,price,ppm};
+  }).filter(r=>r.ppm!=null).sort((a,b)=>b.ppm-a.ppm);
+
+  if(!rows.length){ $('vlWrap').innerHTML='<div class="card"><div class="empty">Sin jugadores con datos para esta vista.</div></div>'; return; }
+
+  const avg=rows.reduce((a,r)=>a+r.ppm,0)/rows.length;
+  const mx=rows[0].ppm;
+  let h='<div class="card"><div class="kpis">'+
+    '<div class="kpi"><div class="v">'+rows.length+'</div><div class="k">Jugadores</div></div>'+
+    '<div class="kpi"><div class="v">'+avg.toFixed(1).replace('.',',')+'</div><div class="k">Media pts/M</div></div>'+
+    '<div class="kpi"><div class="v">'+mx.toFixed(1).replace('.',',')+'</div><div class="k">Mejor</div></div>'+
+    '</div><div class="note" style="margin-top:8px">Puntos por cada millón de euros de valor. '+
+    'Cuanto más alto, más rendimiento por euro invertido.</div></div>';
+
+  h+='<div class="card">'+rows.slice(0,60).map(r=>{
+    const good=r.ppm>=avg;
+    return '<div class="plr">'+faceHTML(r.id,r.name)+
+      '<div class="mid"><div class="nm">'+esc(r.name)+'</div>'+
+      '<div class="sb">'+posBadge(r.position)+esc(r.team||'')+
+      (vlWho!=='mine'?' · '+esc(r.owner):'')+' · '+r.pts+' pts</div></div>'+
+      '<div class="rt"><div class="eur" style="color:'+(good?'#1d7a37':'var(--muted)')+'">'+r.ppm.toFixed(1).replace('.',',')+'</div>'+
+      '<div class="sub2">'+meur(r.price)+'</div></div></div>';
+  }).join('')+'</div>';
+
+  $('vlWrap').innerHTML=h;
+}
+$('bValor').onclick=()=>loadValor();
 
 /* ============================================================
    BOTONES + ARRANQUE
