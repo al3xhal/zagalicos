@@ -346,6 +346,17 @@
       <pre id="dbg">—</pre>
     </details>
   </div>
+
+  <span class="lbl">Análisis con IA</span>
+  <div class="card">
+    <div class="note">Reúne en un único archivo todo lo que la app sabe de esta jornada: rivales, plantillas, mercado con la puja sugerida, cláusulas, tesorería, historial, red de traspasos y tendencias. Se lo das a una IA junto con el prompt y te devuelve un plan de acción.</div>
+    <label style="display:flex;gap:8px;align-items:center;margin-top:10px;font-size:.85rem"><input type="checkbox" id="aiPrices" checked style="width:auto;margin:0"> Incluir series diarias de precios (más completo, pesa más)</label>
+    <button id="bAIDown" style="width:100%;margin-top:12px">Descargar datos para la IA (.json)</button>
+    <button class="sec" id="bAICopy" style="width:100%;margin-top:8px;padding:11px">Copiar datos al portapapeles</button>
+    <button class="sec" id="bAIPrompt" style="width:100%;margin-top:8px;padding:11px">Copiar el prompt para la IA</button>
+    <div class="msg" id="mAI"></div>
+    <div class="note" style="margin-top:10px">Pasos: 1) copia el prompt y pégalo en la IA; 2) adjunta el .json (o pégalo detrás). Tarda unos segundos porque pide a Biwenger plantillas y pujas reales. Los datos salen de tu móvil solo cuando tú los compartes.</div>
+  </div>
 </section>
 
 </main>
@@ -573,6 +584,25 @@ function incomeForecast(){
     out[t.id]={pts,pos:i+1,income:PAY_FIXED+Math.round(pts)*PAY_PER_POINT+posBonus(i+1)};
   });
   return out;
+}
+
+/* Racha diaria (bonus): ingreso recurrente que NO depende de la jornada.
+   No se supone un importe ni una cadencia: se mide en el archivo, sumando
+   los bonus de ese manager desde el reinicio y repartiendolos entre las
+   jornadas ya disputadas. Asi refleja tambien los dias que no entro. */
+function streakPerRound(teamId){
+  const evs=loadArch().events;
+  const reset=evs.filter(e=>e.type==='leagueReset').reduce((m,e)=>Math.max(m,e.date),0);
+  let total=0, n=0;
+  evs.forEach(ev=>{
+    if(ev.type!=='bonus'||ev.date<reset)return;
+    const items=Array.isArray(ev.content)?ev.content:(ev.content?[ev.content]:[]);
+    items.forEach(it=>{
+      if(it&&it.amount!=null&&it.user&&String(it.user.id)===String(teamId)){ total+=it.amount; n++; }
+    });
+  });
+  const r=Math.max(1,roundsPlayed());
+  return {perRound:Math.round(total/r), total, n, rounds:r};
 }
 
 /* Que vender para tapar un descubierto, ordenado por coste deportivo:
@@ -1724,7 +1754,8 @@ function renderTreasury(){
   const fc=incomeForecast(), mine=fc[cfg.userId];
   const bal=balCheck?balCheck.real:(balances[cfg.userId]??0);
   const spend=Number(cfg.spend||0);
-  const after=bal-spend+ (mine?mine.income:0);
+  const streak=streakPerRound(cfg.userId);
+  const after=bal-spend+(mine?mine.income:0)+streak.perRound;
   const deficit=after<0?-after:0;
   const rl=roundsLeft();
 
@@ -1737,6 +1768,9 @@ function renderTreasury(){
   h+='<div class="note" style="margin-top:8px">Desglose: fijo '+eur(PAY_FIXED)+
      ' + '+(mine?Math.round(mine.pts):0)+' pts \u00d7 '+eur(PAY_PER_POINT)+
      ' + '+eur(mine?posBonus(mine.pos):0)+' por quedar <b>'+(mine?mine.pos:'?')+'\u00ba</b> en la jornada.</div>';
+
+  h+='<div class="note" style="margin-top:6px">+ racha diaria: <b style="color:#1d7a37">+'+meur(streak.perRound)+'</b> por jornada de media ('+
+     streak.n+' bonos cobrados = '+meur(streak.total)+' en '+streak.rounds+' jornadas). Se suma al saldo previsto.</div>';
 
   h+='<label for="fSpend" style="margin-top:12px">Gasto que estás valorando (pujas, cláusulas)</label>'+
      '<input id="fSpend" inputmode="numeric" placeholder="0" value="'+(spend||'')+'">';
@@ -2125,7 +2159,18 @@ function buildPointsSeries(){
       series[t.id].push(cum[t.id]);
     });
   });
-  return {rounds,series};
+  // Puntos de salida: quien entro tarde en la liga recibio puntos extra para no ir
+  // rezagado, y esos puntos no aparecen en ningun roundFinished. Sumar solo los de
+  // cada jornada lo dejaba empezando mas abajo que el resto. Se ancla cada serie a
+  // los puntos oficiales de la clasificacion: la diferencia es su punto de partida.
+  const offsets={};
+  teams.forEach(t=>{
+    const fin=series[t.id].length?series[t.id].at(-1):0;
+    const off=(typeof t.points==='number'&&isFinite(t.points))?Math.max(0,t.points-fin):0;
+    offsets[t.id]=off;
+    if(off) series[t.id]=series[t.id].map(v=>v+off);
+  });
+  return {rounds,series,offsets};
 }
 
 async function loadLiga(){
@@ -2190,7 +2235,7 @@ function renderPrediction(){
 }
 
 function renderLiga(){
-  const {rounds,series}=buildPointsSeries();
+  const {rounds,series,offsets}=buildPointsSeries();
   if(!rounds.length){
     $('lgWrap').innerHTML='<div class="card"><div class="empty">Aún no hay jornadas archivadas.<br>Ve a Ajustes → «Archivar histórico completo».</div></div>';
     return;
@@ -2244,7 +2289,9 @@ function renderLiga(){
     const color=LIGA_PALETTE[idx%LIGA_PALETTE.length];
     return '<div class="bidrow"><span><span style="display:inline-block;width:9px;height:9px;border-radius:50%;'+
       'background:'+color+';margin-right:6px;vertical-align:middle"></span>'+esc(t.name)+
-      (me?' <span class="tag dark">tú</span>':'')+'</span><b>'+series[t.id].at(-1)+' pts</b></div>';
+      (me?' <span class="tag dark">tú</span>':'')+
+      (offsets[t.id]?' <span class="tag" title="Puntos de salida">+'+offsets[t.id]+' de salida</span>':'')+
+      '</span><b>'+series[t.id].at(-1)+' pts</b></div>';
   }).join('')+'</div>';
 
   $('lgWrap').innerHTML='<div class="card">'+svg+legend+
@@ -2252,6 +2299,301 @@ function renderLiga(){
     'El icono marca la posición y puntos actuales de cada equipo — la línea gruesa es la tuya.</div></div>'
     + renderPrediction();
 }
+
+/* ============================================================
+   EXPORTACION PARA ANALISIS CON IA
+   Junta en un solo JSON todo lo que la app sabe (rivales, plantillas,
+   mercado, tesoreria, tendencias, historial) para que una IA lo estudie.
+   Cada seccion va en su propio try/catch: si una falla, el resto sale
+   igual y el fallo queda anotado en avisos_calidad.
+   ============================================================ */
+const AI_PROMPT="# ROL\n\nEres un analista experto en fantasy de fútbol, teoría de subastas y economía de ligas cerradas, especializado en **Biwenger (La Liga)**. Trabajas para un único manager, el que aparece como `meta.yo` en los datos. Tu objetivo es una sola cosa: **maximizar su probabilidad de ganar la liga (y el campeonato de invierno, J19), jugando siempre dentro de las normas de Biwenger y de la liga** (sin multicuentas, sin explotar fallos de la plataforma, sin acuerdos que las normas prohíban, sin automatizar acciones en la cuenta). Solo propones decisiones que el manager pueda tomar a mano en la app.\n\n# DATOS\n\nTe adjunto (o pego a continuación) un JSON generado por la app «Zagalicos · Centro de mando». Es tu **única fuente de verdad**. Lee primero estas secciones, porque condicionan todo lo demás:\n\n- `_guia`: significado de cada campo, unidades (importes en euros, `valor` = valor de mercado actual, `clausula` = cláusula de rescisión) y orden de las columnas de las tablas compactas.\n- `reglas`: reglas económicas de la liga. Cada una indica si está **confirmada** con datos reales o es una **hipótesis**. No trates una hipótesis como un hecho.\n- `avisos_calidad`: limitaciones conocidas de los datos (pocas jornadas, saldos de rivales reconstruidos y no reales, descuadres, eventos sin interpretar, etc.). Tenlos presentes en cada conclusión.\n\nDespués, el resto: `equipos` (estado, plantilla, tendencias y perfil de pujador de cada manager), `mercado` (subastas abiertas con la recomendación del modelo propio de la app), `clausulas` (mi exposición y mis objetivos), `tesoreria`, `historial` (traspasos, pujas, subidas de cláusula desde el último reinicio de liga), `red_traspasos`, `modelo_prediccion` y, si vienen, `precios_diarios` y `saldo_diario`.\n\n# REGLAS DE TRABAJO (innegociables)\n\n1. **Usa solo lo que está en el JSON.** Si necesitas un dato que no está, dilo y di qué decisión cambiaría. No inventes cifras, jugadores, lesiones, alineaciones ni resultados reales. No uses conocimiento propio sobre el estado actual de jugadores de La Liga como si fuera un dato del archivo.\n2. **Separa tres niveles** y etiquétalos: **[HECHO]** (sale directamente de los datos), **[INFERENCIA]** (deducción razonable; di en qué se apoya) y **[HIPÓTESIS]** (no verificable con estos datos; di cómo comprobarla).\n3. **Cuantifica la incertidumbre.** Con pocas jornadas jugadas casi todo es ruido: no confundas suerte con nivel. Da rangos, no cifras falsamente precisas. Si una conclusión depende de una muestra pequeña, dilo.\n4. **Revisa el modelo de la app, no lo repitas.** Las pujas sugeridas y las probabilidades vienen de un modelo heurístico (logística sobre la puja esperada de cada rival). Cuestiónalas con los datos de `historial` y los perfiles de pujador: ¿se sobrepaga?, ¿hay rivales que siempre pujan redondo o en el último segundo?, ¿el número real de pujas (`pujas_reales`) cambia la lectura? Si ves un fallo del modelo, dilo y propón la corrección.\n5. **Importes en millones con 2 decimales** (p. ej. `4,35M`). Nunca recomiendes una puja o una cláusula que supere el techo del manager ni lo deje en descubierto sin plan para cubrirlo.\n6. **Sé conciso.** Tablas y viñetas, sin relleno. Responde en español.\n\n# QUÉ HAY QUE ANALIZAR\n\nHaz el análisis **de esta jornada** (el estado actual de los datos), con visión de temporada:\n\n**A. Diagnóstico de cada rival** — para cada manager: situación de puntos y tendencia (media, últimas jornadas, posición por jornada), liquidez real y techo, necesidades de plantilla por posición, actividad (días sin entrar), si está acumulando dinero (`acumulacion_5d`), estilo de puja (multiplicador sobre valor, participación, «redondo» vs «francotirador»), y riesgo de descubierto o de quedarse sin once. Clasifica a los rivales en: **amenaza deportiva**, **amenaza en subastas (compiten conmigo por los mismos jugadores)**, **amenaza de cláusula** y **presa fácil**.\n\n**B. Mercado** — para cada subasta abierta: ¿merece la pena?, ¿cuál es la puja máxima racional (no la que maximiza la probabilidad a cualquier precio, sino la que maximiza el valor esperado)?, ¿qué rivales encajan y pujarán probablemente?, ¿qué ocurre si no la gano? Ordena por valor esperado y marca explícitamente **qué subastas dejar pasar**. Considera que solo puntúan 11 jugadores: el valor de un fichaje es lo que suma *por encima del titular al que desplaza*, más su valor de reventa.\n\n**C. Cláusulas** — (1) **Defensa**: qué jugadores míos son vulnerables ahora mismo (cláusula baja frente a valor, no bloqueados, con rivales activos que pueden pagarla). Qué merece la pena blindar y cuánto cuesta cada punto de protección frente al riesgo. (2) **Ataque**: qué cláusulas de rivales son una ganga (cláusula por debajo o cerca del valor, jugador titular, rival inactivo o que no puede reaccionar) y cuáles puedo pagar sin comprometer la tesorería.\n\n**D. Tesorería** — ingreso previsto de la próxima jornada (fijo + puntos + bonus por posición inverso + racha diaria), descubierto potencial según el gasto que propongas, y **qué vender y en qué orden** si hace falta liquidez (primero lo que no juega). Señala el calendario de pagos que conviene respetar.\n\n**E. Tendencias de precio y arbitraje** — jugadores que suben o bajan de valor (`d3`, `d7`, `d30`, `frena`), cuáles están cerca de su techo, cuáles compraría hoy para vender más caro; cuáles vender antes de que caigan. Usa `precios_diarios` si viene.\n\n**F. Relaciones ocultas y patrones** — usa `red_traspasos` e `historial` para buscar: quién vende a quién y con qué sobreprecio, parejas de managers que se intercambian jugadores, rivales que pujan siempre por los mismos perfiles que yo, managers que compran justo tras cobrar, patrones de horario o de cierre de subasta, comportamiento tras un clausulazo, jugadores que rotan mucho de manos. Para cada patrón: evidencia, tamaño de muestra y qué acción concreta permite.\n\n**G. Competición** — comenta `modelo_prediccion` con espíritu crítico (¿λ y R² tienen sentido con esta muestra?, ¿qué sesgos tiene?) y di qué **3 variables** mueven más mis probabilidades de ser campeón de invierno y de liga, y qué acciones las mueven.\n\n# FORMATO DE LA RESPUESTA\n\n1. **Resumen ejecutivo** (máx. 8 líneas): la situación y las 3 decisiones más importantes de esta jornada.\n2. **Plan de acción priorizado**: tabla con *acción · importe máximo · por qué · probabilidad/riesgo · alternativa si falla*. Máximo 8 filas, ordenadas por valor esperado.\n3. **Análisis por bloques A–G**, cada uno con sus etiquetas [HECHO]/[INFERENCIA]/[HIPÓTESIS].\n4. **Alertas**: lo que puede salir mal en las próximas 48 h (descubierto, cláusulas que vencen o se desbloquean, subastas que cierran, rivales que van a cobrar).\n5. **Qué datos faltan** para mejorar el próximo análisis (concretos: «el JSON de X», «las pujas de la subasta Y»…).\n\n# ANTES DE RESPONDER\n\nComprueba que (a) ninguna recomendación supera el saldo/techo, (b) todos los nombres e importes existen en el JSON, (c) has señalado los avisos de calidad que afectan a tus conclusiones y (d) cada afirmación fuerte lleva su etiqueta.\n";
+
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+
+async function fetchMarketForExport(onProgress){
+  const mk=await api('/as/api/v2/market');
+  const bal=dig(mk,['data.status.balance']);
+  const maxBid=dig(mk,['data.maximumBid'])??dig(mk,['data.status.maximumBid']);
+  market=(dig(mk,['data.sales'])||[]).map(s=>({
+    id:dig(s,['player.id']),price:s.price,seller:dig(s,['user.name']),
+    sellerId:dig(s,['user.id']),until:s.until,clause:dig(s,['player.owner.clause'])
+  })).filter(x=>x.id);
+  let i=0;
+  for(const m of market){
+    i++; if(onProgress) onProgress(i,market.length);
+    try{ m.realBids=await realBidCount(m.id); }catch{ m.realBids=null; }
+    await sleep(120);
+  }
+  return {bal,maxBid};
+}
+
+function buildAIExport(mk,opts){
+  opts=opts||{};
+  const errs=[];
+  const safe=(label,fn,dflt=null)=>{ try{return fn()}catch(e){errs.push(label+': '+e.message);return dflt} };
+  const rn=(n,d)=>n==null||!isFinite(n)?null:Math.round(n*Math.pow(10,d))/Math.pow(10,d);
+  const iso=ts=>ts?new Date(ts*1000).toISOString().slice(0,16).replace('T',' '):null;
+  const now=Math.floor(Date.now()/1000);
+  const me=teams.find(t=>String(t.id)===String(cfg.userId));
+  const myCeil=(mk&&mk.maxBid)??(me?ceiling(me):null);
+
+  const mat=safe('puntos por jornada',roundPointsMatrix,{rounds:[],per:{}});
+  const rounds=mat.rounds, per=mat.per;
+  const ser=safe('serie de puntos',buildPointsSeries,{offsets:{}});
+  const fc=safe('prevision de ingresos',incomeForecast,{});
+  const sim=safe('simulacion de temporada',()=>simulateSeason(2000));
+
+  // posicion de cada equipo en cada jornada
+  const rankPer={}; teams.forEach(t=>rankPer[t.id]=rounds.map(()=>null));
+  rounds.forEach((_,i)=>{
+    [...teams].filter(t=>per[t.id]&&per[t.id][i]!=null).sort((a,b)=>per[b.id][i]-per[a.id][i])
+      .forEach((t,k)=>{ rankPer[t.id][i]=k+1; });
+  });
+
+  const pl=pid=>{
+    const p=allPlayers[pid]||{}, m=momentum(pid)||{};
+    return {id:pid,nombre:p.name||('#'+pid),pos:POS[p.position]||p.position||null,
+      club:dig(p,['team.name']),valor:p.price??null,pts_temporada:p.points??null,
+      pts_esperados:rn(expPoints(pid),2),estado:p.status??null,forma:Array.isArray(p.fitness)?p.fitness:null,
+      var_3d:rn(m.d3,4),var_7d:rn(m.d7,4),var_30d:rn(m.d30,4),
+      frena:!!(m.decel!=null&&m.d7>0.02&&m.decel<-0.4),veces_traspasado:liquidity(pid)};
+  };
+
+  const byPoints=[...teams].sort((a,b)=>(b.points||0)-(a.points||0));
+
+  const equipos=teams.map(t=>safe('equipo '+t.name,()=>{
+    const sq=squads[t.id]||[];
+    const xi=new Set(bestXI(t.id).map(p=>p.id));
+    const pr=profiles[t.id]||null, nd=needs(t), acc=accumulation(t.id,5), sp=streakPerRound(t.id);
+    const vals=(per[t.id]||[]).filter(x=>x!=null);
+    const ultimas=vals.slice(-3);
+    const f=fc[t.id], pb=sim&&sim.res[t.id];
+    return {
+      id:t.id,nombre:t.name,es_mio:String(t.id)===String(cfg.userId),
+      clasificacion:byPoints.findIndex(x=>x.id===t.id)+1,
+      puntos_oficiales:t.points??null,puntos_de_salida_extra:ser.offsets[t.id]||0,
+      saldo_calculado:balances[t.id]??null,
+      saldo_real:(String(t.id)===String(cfg.userId)&&balCheck)?balCheck.real:null,
+      techo_puja:ceiling(t),valor_plantilla:t.teamValue??null,n_jugadores:t.teamSize??sq.length,
+      dias_sin_entrar:daysSince(t.lastAccess),
+      puntos_por_jornada:per[t.id],posicion_por_jornada:rankPer[t.id],
+      media_puntos:vals.length?rn(vals.reduce((a,b)=>a+b,0)/vals.length,2):null,
+      media_ultimas_3:ultimas.length?rn(ultimas.reduce((a,b)=>a+b,0)/ultimas.length,2):null,
+      prevision_proxima_jornada:f?{pts:rn(f.pts,1),puesto:f.pos,ingreso:f.income}:null,
+      racha_diaria_media_por_jornada:sp.perRound,
+      composicion:nd?nd.have:null,huecos_por_posicion:nd?nd.gap:null,
+      acumulacion_5d:acc?{variacion_saldo:acc.dBal,variacion_plantilla:acc.dSize,dias:acc.days}:null,
+      perfil_pujador:pr?{pujas_vistas:pr.n,victorias:pr.wins,participacion:rn(pr.partRate,3),
+        multiplicador_medio_sobre_valor:rn(pr.mult,3),redondea:pr.rounds,francotirador:pr.snipes,
+        ratio_francotirador:rn(pr.sniper,2),compras_por_posicion:pr.posBuys}:null,
+      probabilidades:pb?{campeon_invierno:rn(pb.champWinter,3),podio_invierno:rn(pb.podiumWinter,3),
+        campeon_liga:rn(pb.champEnd,3),podio_liga:rn(pb.podiumEnd,3),
+        puntos_proyectados_invierno:Math.round(pb.projWinter),puntos_proyectados_fin:Math.round(pb.projEnd)}:null,
+      plantilla:sq.map(p=>({...pl(p.id),clausula:p.clause??null,pagado:p.paid??null,
+        ratio_clausula_valor:(p.clause&&p.price)?rn(p.clause/p.price,2):null,
+        bloqueado_ahora:!!(p.lockedUntil&&p.lockedUntil>now),bloqueado_hasta:iso(p.lockedUntil),
+        en_plantilla_desde:iso(p.since),titular_probable:xi.has(p.id)}))
+    };
+  },{id:t.id,nombre:t.name,error:true}));
+
+  // mercado con la recomendacion del modelo propio
+  const mercado=safe('mercado',()=>market.map(m=>{
+    const r=recommendBid(m.id,m.price,myCeil,m.realBids);
+    const v=bidValue(m.id,r.rec);
+    return {...pl(m.id),precio_salida:m.price,vendedor:m.seller||'mercado libre',cierra:iso(m.until),
+      clausula_actual:m.clause??null,pujas_reales:m.realBids??null,
+      puja_sugerida_app:r.rec,prob_ganar_app:rn(r.p,3),veces_sobre_valor:rn(r.rec/m.price,3),
+      confianza:confidence(r.bs).t,
+      rentabilidad:{euros_por_jornada:Math.round(v.perRound||0),margen_pts_sobre_titular:rn(v.marg,2),
+        sustituye_a:v.repl?v.repl.name:null,reventa_10d:Math.round(v.financial||0),amortiza_en_jornadas:v.payback||null},
+      rivales_probables:r.bs.slice(0,6).map(b=>({equipo:b.team.name,puja_esperada:Math.round(b.mu),
+        techo:b.cap,necesita_posicion:b.needsPos,activo:b.active,francotirador:b.sniper!=null?rn(b.sniper,2):null}))};
+  }),[]);
+
+  // clausulas: mi exposicion y mis objetivos
+  const clausulas=safe('clausulas',()=>{
+    const expo=(squads[cfg.userId]||[]).filter(p=>p.clause&&p.price).map(p=>{
+      const pagan=teams.filter(t=>String(t.id)!==String(cfg.userId)&&ceiling(t)>=p.clause)
+        .map(t=>({equipo:t.name,dias_sin_entrar:daysSince(t.lastAccess)}));
+      return {...pl(p.id),clausula:p.clause,ratio:rn(p.clause/p.price,2),
+        bloqueado_ahora:!!(p.lockedUntil&&p.lockedUntil>now),bloqueado_hasta:iso(p.lockedUntil),
+        rivales_que_pueden_pagarla:pagan,activos_ultimos_3d:pagan.filter(x=>x.dias_sin_entrar==null||x.dias_sin_entrar<=3).length};
+    }).sort((a,b)=>a.ratio-b.ratio);
+    const obj=[];
+    teams.forEach(t=>{ if(String(t.id)===String(cfg.userId))return;
+      (squads[t.id]||[]).forEach(p=>{ if(!p.clause||!p.price)return;
+        obj.push({...pl(p.id),dueno:t.name,dueno_dias_sin_entrar:daysSince(t.lastAccess),dueno_saldo:balances[t.id]??null,
+          clausula:p.clause,ratio:rn(p.clause/p.price,2),margen:p.price-p.clause,
+          bloqueado_ahora:!!(p.lockedUntil&&p.lockedUntil>now),puedo_pagarla:myCeil!=null&&myCeil>=p.clause,
+          titular_en_su_equipo:bestXI(t.id).some(x=>x.id===p.id)});
+      });
+    });
+    obj.sort((a,b)=>a.ratio-b.ratio);
+    return {mi_techo:myCeil,mi_exposicion:expo,objetivos_rivales_top60:obj.slice(0,60)};
+  },{});
+
+  // tesoreria
+  const tesoreria=safe('tesoreria',()=>{
+    const bal=balCheck?balCheck.real:(balances[cfg.userId]??null);
+    const f=fc[cfg.userId], sp=streakPerRound(cfg.userId);
+    return {saldo_hoy:bal,ingreso_jornada_previsto:f?f.income:null,racha_diaria_media_por_jornada:sp.perRound,
+      bonos_racha_cobrados:sp.n,gasto_en_estudio:Number(cfg.spend||0),
+      jornadas_restantes:roundsLeft(),
+      sugerencia_ventas_para_liquidez:(()=>{ const need=Math.max(0,(Number(cfg.spend||0))-(bal||0)-(f?f.income:0)-sp.perRound);
+        if(!need)return {descubierto:0,ventas:[]};
+        const s=sellSuggestions(need);
+        return {descubierto:need,cubre:s.covered,ventas:s.picks.map(p=>({nombre:p.name,valor:p.price,venta_rapida_50:Math.round(p.price*0.5),titular:p.inXI,pts_esperados:rn(p.xp,2)}))}; })()};
+  },{});
+
+  // historial desde el ultimo reinicio
+  const evsAll=loadArch().events;
+  const resetTs=evsAll.filter(e=>e.type==='leagueReset').reduce((m,e)=>Math.max(m,e.date),0);
+  const evs=[...evsAll].filter(e=>e.date>=resetTs).sort((a,b)=>a.date-b.date);
+  const traspasos=[], subidas=[], otros=[], conteo={}, pares={}, bonos={};
+  evs.forEach(ev=>{
+    conteo[ev.type]=(conteo[ev.type]||0)+1;
+    const items=Array.isArray(ev.content)?ev.content:(ev.content?[ev.content]:[]);
+    if(ev.type==='transfer'||ev.type==='market'){
+      items.forEach(it=>{
+        traspasos.push([iso(ev.date),ev.type,nm1(it.player),it.from?it.from.name:null,it.to?it.to.name:null,it.amount??null,
+          it.type||null,(it.bids||[]).map(b=>[b.user?b.user.name:null,b.amount])]);
+        if(it.from&&it.to){ const k=it.from.name+'→'+it.to.name; pares[k]=pares[k]||{de:it.from.name,a:it.to.name,n:0,total:0};
+          pares[k].n++; pares[k].total+=it.amount||0; }
+      });
+    }else if(ev.type==='clauseIncrement'){
+      items.forEach(it=>subidas.push([iso(ev.date),it.user?it.user.name:null,nm1(it.player),it.amount??null,it.releaseClause??null]));
+    }else if(ev.type==='bonus'){
+      items.forEach(it=>{ if(!it||!it.user)return; const b=bonos[it.user.name]=bonos[it.user.name]||{n:0,total:0};
+        b.n++; b.total+=it.amount||0; });
+    }else if(['loan','loanReturn','adminTransfer'].includes(ev.type)){
+      otros.push({fecha:iso(ev.date),tipo:ev.type,contenido:JSON.stringify(ev.content).slice(0,400)});
+    }
+  });
+  function nm1(pid){ return (allPlayers[pid]&&allPlayers[pid].name)||('#'+pid); }
+
+  // series diarias
+  let precios=null, saldoDiario=null;
+  if(opts.precios){
+    precios=safe('precios diarios',()=>{
+      const snaps=jget(K_SNAP,{}), keys=Object.keys(snaps).sort();
+      const ids=new Set(); Object.values(squads).forEach(sq=>sq.forEach(p=>ids.add(p.id))); market.forEach(m=>ids.add(m.id));
+      const series={}; ids.forEach(id=>{ series[id]=keys.map(k=>snaps[k][id]!=null?Math.round(snaps[k][id]/1000):null); });
+      return {unidad:'miles de euros',fechas:keys,nombres:Object.fromEntries([...ids].map(id=>[id,nm1(id)])),series};
+    });
+  }
+  saldoDiario=safe('saldo diario',()=>{
+    const s=jget(K_TEAMSNAP,{}), keys=Object.keys(s).sort(); const eq={};
+    teams.forEach(t=>{ eq[t.name]={saldo:keys.map(k=>s[k][t.id]?s[k][t.id].b:null),
+      valor_plantilla:keys.map(k=>s[k][t.id]?s[k][t.id].v:null),n_jugadores:keys.map(k=>s[k][t.id]?s[k][t.id].n:null)}; });
+    return {fechas:keys,equipos:eq};
+  });
+
+  const modelo=sim?{jornadas_jugadas:sim.played,hasta_invierno:sim.toWinter,hasta_fin:sim.toEnd,
+    ruido_semanal_sd:rn(sim.sd,2),lambda_peso_media_propia:rn(sim.model.lambda,3),
+    r2_valor_plantilla_vs_puntos:rn(sim.model.r2,3),simulaciones:2000,
+    metodo:'encogimiento James-Stein hacia regresion puntos~valor de plantilla + Monte Carlo gaussiano'}:null;
+
+  const sinInterpretar=safe('eventos sin interpretar',()=>findUnhandledMoneyEvents().length,null);
+  const avisos=[
+    'Jornadas jugadas: '+roundsPlayed()+'. Con tan pocas jornadas la varianza es enorme: medias y proyecciones son orden de magnitud.',
+    'Puntos esperados por jugador calculados con: '+XP_SOURCE+'.',
+    'Los saldos de los RIVALES se reconstruyen a partir del tablon de eventos, no son los reales (Biwenger no los expone). Solo el saldo propio se contrasta con el real.',
+    balCheck?('Contraste de mi saldo: real '+balCheck.real+' vs calculado '+balCheck.calc+' (diferencia '+balCheck.diff+').'):'No se pudo contrastar mi saldo con el real.',
+    'Eventos con dinero sin interpretar en el archivo: '+(sinInterpretar==null?'desconocido':sinInterpretar)+'.',
+    'Las subastas activas solo muestran el NUMERO de pujas (pujas_reales), nunca quien puja ni cuanto.',
+    hasPrevSeason()?'Hay puntos de la temporada pasada en el volcado.':'No hay puntos de la temporada pasada en el volcado general de jugadores.',
+    'Equipos con puntos de salida extra (entraron tarde): '+teams.filter(t=>(ser.offsets[t.id]||0)>0).map(t=>t.name+' (+'+ser.offsets[t.id]+')').join(', ')+'.',
+    mk?'Mercado cargado en el momento de exportar.':'Mercado NO cargado: la seccion mercado esta vacia.'
+  ].concat(errs.map(e=>'Fallo parcial al exportar -> '+e));
+
+  const regla=(texto,estado)=>({texto,estado});
+  return {
+    meta:{app:'Zagalicos · Centro de mando',generado:iso(now)+' UTC',liga_id:cfg.leagueId,
+      yo:{id:cfg.userId,nombre:me?me.name:null},jornadas_jugadas:roundsPlayed(),
+      jornadas_restantes:roundsLeft(),jornadas_temporada:SEASON_ROUNDS,jornada_cierre_invierno:WINTER_ROUND,
+      desde_reinicio_de_liga:iso(resetTs)},
+    _guia:{
+      importes:'Todos los importes en euros salvo indicacion. valor = valor de mercado; clausula = clausula de rescision.',
+      variaciones:'var_3d/7d/30d = variacion relativa del valor (0,05 = +5%). frena = sube pero se desacelera.',
+      puntos_por_jornada:'Un valor por jornada archivada, en orden cronologico; null = sin dato de ese equipo.',
+      posicion_por_jornada:'1 = mejor puntuacion de esa jornada.',
+      historial_traspasos_columnas:['fecha','tipo (transfer|market)','jugador','de','a','importe','subtipo','pujas [[usuario,importe]]'],
+      historial_subidas_clausula_columnas:['fecha','manager','jugador','importe_pagado','nueva_clausula'],
+      techo_puja:'Aproximacion de la app: saldo + 25% del valor de plantilla.',
+      titular_probable:'Once estimado por la app con pts_esperados, respetando minimos por posicion.'
+    },
+    reglas:{
+      saldo_inicial_tras_reinicio:regla(INITIAL_BALANCE,'confirmado'),
+      pago_por_jornada:regla({fijo:PAY_FIXED,por_punto:PAY_PER_POINT,bonus_posicion_base_1o:PAY_POS_BASE,paso_por_puesto:PAY_POS_STEP,tope:PAY_POS_CAP,
+        nota:'El bonus de posicion es INVERSO: cuanto peor quedas, mas cobras. Extras: 300.000 por jugador en once ideal, 200.000 por MVP.'},'confirmado contra roundFinished archivados'),
+      subastas:regla('Mercado por subasta con pujas ocultas; solo se ve el numero de pujas activas.','confirmado'),
+      clausulas:regla('Se permite el clausulazo (clause: steal). Subir la clausula de un jugador resta su importe del saldo del manager.','clausulazo confirmado; coste de subida inferido (pendiente de verificar contra saldo real)'),
+      tramos_clausula_app:regla(CLAUSE_TIERS.map(t=>({desde:t[0],hasta:isFinite(t[1])?t[1]:null,clausula:t[2]})),'hipotesis, no confirmada'),
+      venta_rapida:regla('50% del valor de mercado','confirmado en ajustes de la liga'),
+      racha_diaria:regla('Bonus por iniciar sesion dias seguidos (visto: 250.000 € cada 5 dias).','confirmado'),
+      once:regla({minimos_por_posicion:XI_MIN,plantilla_tipo:SQUAD_TARGET,minimo_plantilla:MIN_SQUAD},'configuracion de la app')
+    },
+    equipos,mercado,clausulas,tesoreria,
+    historial:{traspasos:traspasos,subidas_clausula:subidas,otros_eventos:otros,conteo_por_tipo:conteo,bonos_por_manager:bonos},
+    red_traspasos:Object.values(pares).sort((a,b)=>b.total-a.total),
+    modelo_prediccion:modelo,
+    precios_diarios:precios,saldo_diario:saldoDiario,
+    avisos_calidad:avisos
+  };
+}
+
+function downloadText(name,text,type){
+  const b=new Blob([text],{type:type||'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download=name;
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },1500);
+}
+async function copyText(t){
+  try{ await navigator.clipboard.writeText(t); return true; }
+  catch{
+    try{ const ta=document.createElement('textarea'); ta.value=t; ta.style.position='fixed'; ta.style.opacity='0';
+      document.body.appendChild(ta); ta.select(); const ok=document.execCommand('copy'); ta.remove(); return ok; }
+    catch{ return false; }
+  }
+}
+
+async function runAIExport(mode){
+  const m=$('mAI'); m.className='msg ok show';
+  if(!connected()){ m.className='msg err show'; m.textContent='Conecta la app primero (Ajustes).'; return; }
+  ['bAIDown','bAICopy'].forEach(id=>$(id).disabled=true);
+  try{
+    m.textContent='Cargando liga y plantillas…';
+    squads={};
+    await loadBase(true);
+    await checkBalance();
+    m.textContent='Cargando mercado…';
+    const mk=await fetchMarketForExport((i,n)=>{ m.textContent='Cargando pujas reales '+i+'/'+n+'…'; });
+    m.textContent='Montando el informe…';
+    const data=buildAIExport(mk,{precios:$('aiPrices').checked});
+    const txt=JSON.stringify(data);
+    const kb=Math.round(txt.length/1024);
+    if(mode==='copy'){
+      const ok=await copyText(txt);
+      m.textContent=ok?('Datos copiados ('+kb+' KB). Pégalos en la IA tras el prompt.'):'No se pudo copiar; usa «Descargar».';
+      if(!ok) m.className='msg err show';
+    }else{
+      downloadText('zagalicos-ia-'+today()+'.json',txt);
+      m.textContent='Descargado ('+kb+' KB). Adjúntalo a la IA junto con el prompt.';
+    }
+    const warn=data.avisos_calidad.filter(a=>a.startsWith('Fallo parcial'));
+    if(warn.length) m.textContent+=' ⚠ '+warn.length+' sección(es) con fallo parcial (ver avisos_calidad).';
+  }catch(err){ m.className='msg err show'; m.textContent='Error: '+err.message; }
+  ['bAIDown','bAICopy'].forEach(id=>$(id).disabled=false);
+}
+$('bAIDown').onclick=()=>runAIExport('download');
+$('bAICopy').onclick=()=>runAIExport('copy');
+$('bAIPrompt').onclick=async()=>{
+  const m=$('mAI'); const ok=await copyText(AI_PROMPT);
+  m.className='msg '+(ok?'ok':'err')+' show';
+  m.textContent=ok?'Prompt copiado.':'No se pudo copiar el prompt.';
+};
+
 
 $('bLiga').onclick=()=>loadLiga();
 
