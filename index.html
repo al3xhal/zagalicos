@@ -478,16 +478,27 @@ const posBadge=p=>'<span class="pos p'+(p||0)+'">'+(POS[p]||'?')+'</span>';
    RED
    ============================================================ */
 const H=()=>({'Authorization':'Bearer '+cfg.token,'X-League':cfg.leagueId,'X-User':cfg.userId,'X-Version':cfg.version,'X-Lang':'es'});
-async function api(path){const r=await fetch(cfg.workerUrl+path,{headers:H()});return r.json()}
-async function apiCF(path){const r=await fetch(cfg.workerUrl+path);return r.json()}
+/* Lectura segura: si la respuesta no es JSON (pagina de error de Cloudflare,
+   bloqueo por limite de peticiones, timeout...), lo decimos con el endpoint
+   exacto y un trozo del cuerpo real, en vez de un "Unexpected token '<'" ciego. */
+async function safeJson(res,label){
+  const txt=await res.text();
+  try{ return JSON.parse(txt); }
+  catch{
+    const snippet=txt.replace(/\s+/g,' ').trim().slice(0,160);
+    throw new Error('Respuesta no-JSON en '+label+' (HTTP '+res.status+'): '+(snippet||'(vacío)'));
+  }
+}
+async function api(path){const r=await fetch(cfg.workerUrl+path,{headers:H()});return safeJson(r,path)}
+async function apiCF(path){const r=await fetch(cfg.workerUrl+path);return safeJson(r,path)}
 async function apiPost(path,body){
   const r=await fetch(cfg.workerUrl+path,{method:'POST',headers:{...H(),'Content-Type':'application/json'},body:JSON.stringify(body)});
-  return r.json();
+  return safeJson(r,path+' (POST)');
 }
 // Numero REAL de pujas activas en este momento (sin nombres, Biwenger no los da mientras la subasta sigue abierta).
 async function realBidCount(playerId){
   try{ const d=await apiPost('/as/api/v2/market/bids',{player:playerId}); return typeof d.data==='number'?d.data:null; }
-  catch{ return null; }
+  catch(err){ console.warn('realBidCount',playerId,err.message); return null; }
 }
 
 async function ensurePlayers(){
@@ -721,6 +732,9 @@ function computeBalances(){
       // "user" recibe "amount" directo, sin contrapartida. Estructura verificada
       // contra datos reales, no es una suposición.
       if(ev.type==='bonus'&&it.user&&b[it.user.id]!=null){ b[it.user.id]+=it.amount; moved=true; }
+      // Subida de clausula (blindaje): el manager PAGA "amount" de su saldo para
+      // subir la clausula del jugador. Sin contrapartida (el dinero sale de la liga).
+      if(ev.type==='clauseIncrement'&&it.user&&b[it.user.id]!=null){ b[it.user.id]-=it.amount; moved=true; }
       // Traspasos y mercado: comprador Y/O vendedor identificados (from/to).
       if(it.from&&b[it.from.id]!=null){b[it.from.id]+=it.amount;moved=true}
       if(it.to  &&b[it.to.id]  !=null){b[it.to.id]  -=it.amount;moved=true}
@@ -895,7 +909,7 @@ function findUnhandledMoneyEvents(){
     const items=Array.isArray(ev.content)?ev.content:(ev.content?[ev.content]:[]);
     items.forEach(it=>{
       if(!it||it.amount==null)return;
-      const handled=(ev.type==='bonus'&&it.user)||it.from||it.to;
+      const handled=((ev.type==='bonus'||ev.type==='clauseIncrement')&&it.user)||it.from||it.to;
       if(!handled) hits.push({date:ev.date,type:ev.type,raw:it});
     });
   });
@@ -1010,16 +1024,25 @@ async function loadBase(force){
   }
 
   computeBalances();
-  await Promise.all(teams.map(async t=>{
-    if(squads[t.id])return;
-    const u=await api('/as/api/v2/user/'+t.id+'?fields=id,name,players(id,owner)');
-    squads[t.id]=(dig(u,['data.players'])||[]).map(p=>{
-      const i=allPlayers[p.id]||{};
-      return {id:p.id,name:i.name||('#'+p.id),position:i.position||0,team:dig(i,['team.name'])||'',
-        price:i.price||null,clause:dig(p,['owner.clause']),paid:dig(p,['owner.price']),
-        lockedUntil:dig(p,['owner.lockedUntil']),since:dig(p,['owner.date'])};
-    });
-  }));
+  // Una plantilla detras de otra, con pequeña pausa: pedir las 13 a la vez
+  // dispara el mismo limite de peticiones que el de las pujas, y si una sola
+  // fallaba, el Promise.all entero se caia y la app no terminaba de cargar.
+  for(const t of teams){
+    if(squads[t.id])continue;
+    try{
+      const u=await api('/as/api/v2/user/'+t.id+'?fields=id,name,players(id,owner)');
+      squads[t.id]=(dig(u,['data.players'])||[]).map(p=>{
+        const i=allPlayers[p.id]||{};
+        return {id:p.id,name:i.name||('#'+p.id),position:i.position||0,team:dig(i,['team.name'])||'',
+          price:i.price||null,clause:dig(p,['owner.clause']),paid:dig(p,['owner.price']),
+          lockedUntil:dig(p,['owner.lockedUntil']),since:dig(p,['owner.date'])};
+      });
+    }catch(err){
+      console.warn('loadBase squad',t.id,err.message);
+      squads[t.id]=squads[t.id]||[];
+    }
+    await new Promise(r=>setTimeout(r,120));
+  }
   buildProfiles(); saveTeamSnapshot(); archNote();
   baseLoaded=true;
 }
@@ -1043,7 +1066,13 @@ async function loadMercado(){
     })).filter(x=>x.id);
 
     // Numero real de pujas activas ahora mismo (Biwenger da el conteo, no los nombres).
-    await Promise.all(market.map(async m=>{ m.realBids = await realBidCount(m.id); }));
+    // Una detras de otra, con una pequeña pausa: todas a la vez dispara facilmente
+    // limites de peticiones (eso es lo que probablemente causaba el error "no es JSON").
+    for(const m of market){
+      try{ m.realBids = await realBidCount(m.id); }
+      catch{ m.realBids = null; }
+      await new Promise(r=>setTimeout(r,120));
+    }
 
     renderMercado(bal,maxBid);
   }catch(err){
@@ -1910,6 +1939,9 @@ function balanceTrail(teamId){
       let delta=0, touches=false, other=null;
       if(ev.type==='bonus'&&it.user&&String(it.user.id)===String(teamId)){
         delta+=it.amount; touches=true; other=it.reason||'bono';
+      }
+      if(ev.type==='clauseIncrement'&&it.user&&String(it.user.id)===String(teamId)){
+        delta-=it.amount; touches=true; other='subida de cláusula';
       }
       if(it.from&&String(it.from.id)===String(teamId)){delta+=it.amount;touches=true;other=it.to?.name}
       if(it.to&&String(it.to.id)===String(teamId)){delta-=it.amount;touches=true;other=it.from?.name}
