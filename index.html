@@ -200,7 +200,7 @@
   </div>
 </section>
 
-<!-- ============ MERCADO ============ -->
+<div style="display:none" aria-hidden="true"><!-- MERCADO (retirado de la interfaz) -->
 <section id="s-mercado">
   <div class="card">
     <input id="qSearch" placeholder="🔍 ¿Quién tiene a…?  Escribe un jugador">
@@ -216,6 +216,7 @@
   <div class="card" id="cMktEmpty" style="display:none"><div class="empty" id="mktEmptyTxt"></div></div>
 </section>
 
+</div>
 <!-- ============ RIVALES ============ -->
 <section id="s-rivales">
   <div class="rowtop">
@@ -226,7 +227,7 @@
   <div id="spyWrap"></div>
 </section>
 
-<!-- ============ CLÁUSULAS ============ -->
+<div style="display:none" aria-hidden="true"><!-- CLAUSULAS E HISTORIAL (retirados de la interfaz) -->
 <section id="s-clausulas">
   <div class="rowtop">
     <span class="lbl">Cláusulas</span>
@@ -265,6 +266,7 @@
   <div class="card"><div id="histList"></div></div>
 </section>
 
+</div>
 <!-- ============ LIGA (evolución de puntos) ============ -->
 <section id="s-liga">
   <div class="rowtop">
@@ -272,6 +274,22 @@
     <button class="sec" id="bLiga">Actualizar</button>
   </div>
   <div id="lgWrap"><div class="card"><div class="empty">Cargando…</div></div></div>
+</section>
+
+<!-- ============ ECONOMÍA ============ -->
+<section id="s-economia">
+  <div class="rowtop">
+    <span class="lbl">Economía de la liga</span>
+    <button class="sec" id="bEcon">Calcular</button>
+  </div>
+  <div class="chips" id="ecChips">
+    <div class="chip on" data-ec="patrimonio">Patrimonio</div>
+    <div class="chip" data-ec="evolucion">Evolución</div>
+    <div class="chip" data-ec="flujos">Traspasos</div>
+    <div class="chip" data-ec="ingresos">Ingresos</div>
+    <div class="chip" data-ec="rentab">Rentabilidad</div>
+  </div>
+  <div id="ecWrap"><div class="card"><div class="empty">Pulsa «Calcular».</div></div></div>
 </section>
 
 <!-- ============ VALOR (puntos por millón) ============ -->
@@ -306,8 +324,47 @@
     <div class="chip" data-st="jugadores">Jugadores</div>
     <div class="chip" data-st="clubes">Clubes</div>
     <div class="chip" data-st="liga">Pulso</div>
+    <div class="chip" data-st="mapa">Mapa</div>
+    <div class="chip" data-st="curiosidades">Curiosidades</div>
   </div>
   <div id="stWrap"><div class="card"><div class="empty">Pulsa «Calcular».<br>Cuanto más histórico tengas archivado, más jugosas.</div></div></div>
+</section>
+
+<!-- ============ INFORME ============ -->
+<section id="s-informe">
+  <div class="rowtop">
+    <span class="lbl">Informe para la liga</span>
+    <button class="sec" id="bInforme">Vista previa</button>
+  </div>
+  <div class="card">
+    <h3>Una página para todos, sin tu caja</h3>
+    <div class="note" style="margin-top:6px">Genera una página con clasificación, evolución de puntos y posiciones, mapa de calor, predicción de campeón, forma, jornadas ganadas, traspasos públicos y curiosidades, y la publica en tu Worker para que la vea el resto de la liga. <b>Nunca</b> aparece la caja, el techo, los gastos, ingresos, premios, blindajes ni el patrimonio de ningún equipo (el tuyo tampoco). Antes de cada publicación una auditoría comprueba que no se ha colado ninguna cifra; si salta, no se sube nada.</div>
+  </div>
+  <div class="card">
+    <label for="rpTitle">Título del informe</label>
+    <input id="rpTitle" maxlength="80">
+    <label for="rpKey">Clave de publicación</label>
+    <input id="rpKey" type="password" autocomplete="off" placeholder="la misma que el secreto PUBLISH_KEY del Worker">
+    <label style="display:flex;gap:8px;align-items:center;margin-top:12px;font-size:.85rem;color:var(--ink)"><input type="checkbox" id="rpAuto" style="width:auto;margin:0"> Publicar automáticamente cuando la app se actualice</label>
+    <button id="bRpPub">Publicar ahora</button>
+    <div class="msg" id="mRp"></div>
+    <div id="rpStatus" style="margin-top:10px"></div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">
+      <button class="sec" id="bRpDown">Descargar HTML</button>
+      <button class="sec" id="bRpNew">Enlace nuevo</button>
+    </div>
+    <div class="note" style="margin-top:10px">La publicación automática se lanza cuando abres la app o vuelves a ella (como mucho cada 10 minutos y solo si hay cambios). Si nadie abre la app, el informe no se refresca solo.</div>
+  </div>
+  <div class="card">
+    <h3>Qué secciones incluir</h3>
+    <div id="rpSecs"></div>
+  </div>
+  <div class="card">
+    <h3>Vista previa</h3>
+    <div class="note" id="rpAudit" style="margin:4px 0 8px">—</div>
+    <iframe id="rpFrame" sandbox title="Vista previa del informe" style="width:100%;height:560px;border:1px solid var(--line);border-radius:8px;background:#fff;display:none"></iframe>
+  </div>
+  <div id="infWrap"></div>
 </section>
 
 <!-- ============ AJUSTES ============ -->
@@ -346,19 +403,29 @@
       <pre id="dbg">—</pre>
     </details>
   </div>
+
+  <span class="lbl">Análisis con IA</span>
+  <div class="card">
+    <div class="note">Reúne en un único archivo todo lo que la app sabe de esta jornada: rivales, plantillas, mercado con la puja sugerida, cláusulas, tesorería, historial, red de traspasos y tendencias. Se lo das a una IA junto con el prompt y te devuelve un plan de acción.</div>
+    <label style="display:flex;gap:8px;align-items:center;margin-top:10px;font-size:.85rem"><input type="checkbox" id="aiPrices" checked style="width:auto;margin:0"> Incluir series diarias de precios (más completo, pesa más)</label>
+    <button id="bAIDown" style="width:100%;margin-top:12px">Descargar datos para la IA (.json)</button>
+    <button class="sec" id="bAICopy" style="width:100%;margin-top:8px;padding:11px">Copiar datos al portapapeles</button>
+    <button class="sec" id="bAIPrompt" style="width:100%;margin-top:8px;padding:11px">Copiar el prompt para la IA</button>
+    <div class="msg" id="mAI"></div>
+    <div class="note" style="margin-top:10px">Pasos: 1) copia el prompt y pégalo en la IA; 2) adjunta el .json (o pégalo detrás). Tarda unos segundos porque pide a Biwenger plantillas y pujas reales. Los datos salen de tu móvil solo cuando tú los compartes.</div>
+  </div>
 </section>
 
 </main>
 
 <nav>
   <button id="nResumen" class="on"><i>🏆</i>Resumen</button>
-  <button id="nMercado"><i>⚡</i>Mercado</button>
   <button id="nRivales"><i>🕵</i>Rivales</button>
-  <button id="nClausulas"><i>🔓</i>Cláusulas</button>
-  <button id="nHistorial"><i>📜</i>Historial</button>
   <button id="nLiga"><i>📈</i>Liga</button>
+  <button id="nEconomia"><i>💶</i>Economía</button>
   <button id="nValor"><i>⚖</i>Valor</button>
   <button id="nStats"><i>📊</i>Stats</button>
+  <button id="nInforme"><i>📰</i>Informe</button>
 </nav>
 
 <script>
@@ -489,11 +556,32 @@ async function safeJson(res,label){
     throw new Error('Respuesta no-JSON en '+label+' (HTTP '+res.status+'): '+(snippet||'(vacío)'));
   }
 }
-async function api(path){const r=await fetch(cfg.workerUrl+path,{headers:H()});return safeJson(r,path)}
+/* Biwenger sube de vez en cuando la version minima de cliente y responde
+   {"status":400,"message":"Old version", userMessage:"...?cb=NNN..."}.
+   Si pasa, probamos UNA vez con el numero que pide (cb) y lo guardamos; si aun
+   asi la rechaza, damos el aviso claro en vez de un JSON ilegible. */
+const isOldVersion=d=>!!(d&&d.status===400&&/old version/i.test(String(d.message||'')));
+async function bwFetch(path,init,label){
+  for(let attempt=0;attempt<2;attempt++){
+    const r=await fetch(cfg.workerUrl+path,{...init,headers:{...H(),...((init&&init.headers)||{})}});
+    const d=await safeJson(r,label||path);
+    if(!isOldVersion(d)) return d;
+    const m=String(d.userMessage||'').match(/cb=(\d+)/);
+    const nv=m&&m[1];
+    if(attempt===0&&nv&&nv!==String(cfg.version)){
+      console.warn('X-Version antigua ('+cfg.version+'); reintento con '+nv);
+      cfg.version=nv; saveCfg();
+      const fv=$('fVer'); if(fv) fv.value=nv;
+      continue;
+    }
+    throw new Error('Biwenger rechaza la X-Version ('+cfg.version+') por antigua'+(nv?(' y pide la '+nv):'')+
+      '. Vuelve a copiarla: F12 → Red → una petición «user» → cabecera X-Version → pégala en Ajustes.');
+  }
+}
+async function api(path){return bwFetch(path,{},path)}
 async function apiCF(path){const r=await fetch(cfg.workerUrl+path);return safeJson(r,path)}
 async function apiPost(path,body){
-  const r=await fetch(cfg.workerUrl+path,{method:'POST',headers:{...H(),'Content-Type':'application/json'},body:JSON.stringify(body)});
-  return safeJson(r,path+' (POST)');
+  return bwFetch(path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)},path+' (POST)');
 }
 // Numero REAL de pujas activas en este momento (sin nombres, Biwenger no los da mientras la subasta sigue abierta).
 async function realBidCount(playerId){
@@ -573,6 +661,25 @@ function incomeForecast(){
     out[t.id]={pts,pos:i+1,income:PAY_FIXED+Math.round(pts)*PAY_PER_POINT+posBonus(i+1)};
   });
   return out;
+}
+
+/* Racha diaria (bonus): ingreso recurrente que NO depende de la jornada.
+   No se supone un importe ni una cadencia: se mide en el archivo, sumando
+   los bonus de ese manager desde el reinicio y repartiendolos entre las
+   jornadas ya disputadas. Asi refleja tambien los dias que no entro. */
+function streakPerRound(teamId){
+  const evs=loadArch().events;
+  const reset=evs.filter(e=>e.type==='leagueReset').reduce((m,e)=>Math.max(m,e.date),0);
+  let total=0, n=0;
+  evs.forEach(ev=>{
+    if(ev.type!=='bonus'||ev.date<reset)return;
+    const items=Array.isArray(ev.content)?ev.content:(ev.content?[ev.content]:[]);
+    items.forEach(it=>{
+      if(it&&it.amount!=null&&it.user&&String(it.user.id)===String(teamId)){ total+=it.amount; n++; }
+    });
+  });
+  const r=Math.max(1,roundsPlayed());
+  return {perRound:Math.round(total/r), total, n, rounds:r};
 }
 
 /* Que vender para tapar un descubierto, ordenado por coste deportivo:
@@ -857,7 +964,7 @@ function recommendBid(pid,price,myCeiling,knownN){
 /* ============================================================
    NAVEGACIÓN
    ============================================================ */
-const SECTIONS=['resumen','mercado','rivales','clausulas','historial','liga','valor','stats','ajustes'];
+const SECTIONS=['resumen','rivales','liga','economia','valor','stats','informe','ajustes'];
 function show(name){
   SECTIONS.forEach(s=>{
     $('s-'+s).classList.toggle('active',s===name);
@@ -865,13 +972,12 @@ function show(name){
   });
   if(!connected())return;
   if(name==='resumen')loadResumen();
-  if(name==='mercado')loadMercado();
   if(name==='rivales')loadRivales();
-  if(name==='clausulas')loadClausulas();
-  if(name==='historial')loadHistorial();
   if(name==='liga')loadLiga();
+  if(name==='economia')loadEconomia();
   if(name==='valor')loadValor();
   if(name==='stats')loadStats();
+  if(name==='informe')loadInforme();
 }
 SECTIONS.forEach(s=>$('n'+s.charAt(0).toUpperCase()+s.slice(1)).onclick=()=>show(s));
 const connected=()=>!!(cfg.token&&cfg.leagueId&&cfg.userId&&cfg.version);
@@ -964,12 +1070,22 @@ $('bVerify').onclick=async()=>{
   saveCfg();pill();
   const m=$('mVerify');m.className='msg';
   if(!cfg.token){m.className='msg err show';m.textContent='Inicia sesión primero.';return}
+  if(cfg.userId&&cfg.userId===cfg.leagueId){
+    m.className='msg err show';
+    m.textContent='El User ID es igual que el League ID ('+cfg.userId+'). El User ID es el de tu usuario (cabecera X-User), no el de la liga (X-League).';
+    return;
+  }
   $('bVerify').disabled=true;
   try{
     const d=await api('/as/api/v2/user?fields=id,name,balance');
     const n=dig(d,['data.name','name']);
     if(n){m.className='msg ok show';m.textContent='Conectado como '+n+'.'}
-    else{m.className='msg err show';m.textContent='Respuesta inesperada: '+JSON.stringify(d).slice(0,180)}
+    else{
+      m.className='msg err show';
+      m.textContent='Respuesta inesperada: '+JSON.stringify(d).slice(0,180)+
+        (d&&d.status===401&&/invalid user/i.test(String(d.message||''))
+          ?' → Biwenger no reconoce ese User ID con este token. Revisa que X-User (User ID) sea el de tu usuario y no el de la liga, y vuelve a iniciar sesión.':'');
+    }
   }catch(err){m.className='msg err show';m.textContent='Error: '+err.message}
   $('bVerify').disabled=false;
 };
@@ -1045,6 +1161,7 @@ async function loadBase(force){
   }
   buildProfiles(); saveTeamSnapshot(); archNote();
   baseLoaded=true;
+  setTimeout(maybeAutoPublish,0);
 }
 
 /* ============================================================
@@ -1527,7 +1644,7 @@ function mrow(i,nm,ic,val,sub){
 async function loadStats(){
   if(!connected()){show('ajustes');return}
   $('bStats').disabled=true;$('bStats').textContent='…';
-  try{ await loadBase(); computeBalances(); computeStats(); renderStats(); }
+  try{ await loadBase(); computeBalances(); ET=econTimeline(); computeStats(); renderStats(); }
   catch(err){ $('stWrap').innerHTML='<div class="card"><div class="empty">Error: '+esc(err.message)+'</div></div>'; }
   $('bStats').disabled=false;$('bStats').textContent='Calcular';
 }
@@ -1536,6 +1653,9 @@ function renderStats(){
   if(!ST){$('stWrap').innerHTML='<div class="card"><div class="empty">Pulsa «Calcular».</div></div>';return}
   const A=ST.auctions;
   let h='';
+
+  if(stMode==='mapa'){ $('stWrap').innerHTML=renderMapa(); return; }
+  if(stMode==='curiosidades'){ $('stWrap').innerHTML=renderCuriosidades(); return; }
 
   if(!A.length && stMode!=='liga'){
     $('stWrap').innerHTML='<div class="card"><div class="empty">Todavía no hay subastas archivadas.<br>Usa «Archivar histórico completo» en Ajustes.</div></div>';
@@ -1724,7 +1844,8 @@ function renderTreasury(){
   const fc=incomeForecast(), mine=fc[cfg.userId];
   const bal=balCheck?balCheck.real:(balances[cfg.userId]??0);
   const spend=Number(cfg.spend||0);
-  const after=bal-spend+ (mine?mine.income:0);
+  const streak=streakPerRound(cfg.userId);
+  const after=bal-spend+(mine?mine.income:0)+streak.perRound;
   const deficit=after<0?-after:0;
   const rl=roundsLeft();
 
@@ -1737,6 +1858,9 @@ function renderTreasury(){
   h+='<div class="note" style="margin-top:8px">Desglose: fijo '+eur(PAY_FIXED)+
      ' + '+(mine?Math.round(mine.pts):0)+' pts \u00d7 '+eur(PAY_PER_POINT)+
      ' + '+eur(mine?posBonus(mine.pos):0)+' por quedar <b>'+(mine?mine.pos:'?')+'\u00ba</b> en la jornada.</div>';
+
+  h+='<div class="note" style="margin-top:6px">+ racha diaria: <b style="color:#1d7a37">+'+meur(streak.perRound)+'</b> por jornada de media ('+
+     streak.n+' bonos cobrados = '+meur(streak.total)+' en '+streak.rounds+' jornadas). Se suma al saldo previsto.</div>';
 
   h+='<label for="fSpend" style="margin-top:12px">Gasto que estás valorando (pujas, cláusulas)</label>'+
      '<input id="fSpend" inputmode="numeric" placeholder="0" value="'+(spend||'')+'">';
@@ -1953,6 +2077,36 @@ function balanceTrail(teamId){
   return rows;
 }
 
+/* Diagnostico: en vez de adivinar, comprueba que explicaria el descuadre.
+   - desglosa lo reconstruido por tipo de movimiento
+   - prueba si el descuadre coincide con la suma de un tipo (no deberia contarse),
+     con el doble (signo invertido), con la mitad, o con un unico movimiento. */
+function diagnoseBalance(rows,diff){
+  const byType={};
+  rows.forEach(r=>{
+    const k=r.type+((r.type==='transfer'||r.type==='market')?(r.delta>0?' · ventas':' · compras'):'');
+    const o=byType[k]=byType[k]||{n:0,sum:0}; o.n++; o.sum+=r.delta;
+  });
+  const tol=60000, sus=[];
+  if(Math.abs(diff)>tol){
+    Object.entries(byType).forEach(([k,o])=>{
+      if(Math.abs(diff-o.sum)<=tol)   sus.push('El descuadre ('+meur(diff)+') coincide con la suma de «'+k+'» ('+meur(o.sum)+'): probablemente ese tipo NO debería contarse.');
+      if(Math.abs(diff-2*o.sum)<=tol) sus.push('El descuadre coincide con el DOBLE de «'+k+'» ('+meur(2*o.sum)+'): probablemente su signo está invertido.');
+      if(Math.abs(diff-o.sum/2)<=tol&&o.sum) sus.push('El descuadre coincide con la MITAD de «'+k+'» ('+meur(o.sum/2)+'): quizá solo cuenta la mitad.');
+    });
+    rows.forEach(r=>{
+      const p=allPlayers[r.player]||{}, d=new Date(r.date*1000).toLocaleDateString('es-ES');
+      if(sus.length>=6)return;
+      if(Math.abs(diff-r.delta)<=tol)   sus.push('Un único movimiento coincide con el descuadre: '+r.type+' de '+esc(p.name||('#'+r.player))+' ('+d+', '+meur(r.delta)+'). Quizá no debería contarse.');
+      else if(Math.abs(diff-2*r.delta)<=tol) sus.push('Un único movimiento tiene la mitad del descuadre: '+r.type+' de '+esc(p.name||('#'+r.player))+' ('+d+', '+meur(r.delta)+'). Quizá su signo está invertido.');
+    });
+    if(!sus.length) sus.push(diff<0
+      ? 'Reconstruido por DEBAJO del real: falta algún ingreso por contar ('+meur(-diff)+'), o el archivo no llega hasta el reinicio.'
+      : 'Reconstruido por ENCIMA del real: sobra algún ingreso o falta algún gasto ('+meur(diff)+'). Ningún tipo ni movimiento aislado lo explica.');
+  }
+  return {byType,sus};
+}
+
 async function runBalanceTrail(){
   const box=$('trailResult');
   box.innerHTML='<div class="empty">Reconstruyendo…</div>';
@@ -1968,7 +2122,20 @@ async function runBalanceTrail(){
         ' — saldo real '+meur(balCheck.real)+', reconstruido '+meur(calc)+
         ' a partir de '+rows.length+' movimientos desde el reinicio.</div>';
     }
-    box.innerHTML=head+'<div style="margin-top:8px;max-height:420px;overflow-y:auto">'+
+    let diag='';
+    if(!rows.length){
+      diag='<div class="note" style="margin-top:8px;color:#b3202b"><b>No hay movimientos desde el reinicio en el archivo.</b> Falta el evento de reinicio de liga: pulsa «Archivar todo el historial» en Ajustes y vuelve a reconstruir.</div>';
+    }else if(balCheck){
+      const dg=diagnoseBalance(rows,balCheck.diff);
+      const ci=rows.filter(r=>r.type==='clauseIncrement').reduce((a,r)=>a+r.delta,0);
+      diag='<div class="note" style="margin-top:8px"><b>Por tipo de movimiento</b> (suma de lo reconstruido):</div>'+
+        Object.entries(dg.byType).sort((a,b)=>Math.abs(b[1].sum)-Math.abs(a[1].sum)).map(([k,o])=>
+          '<div class="trow"><span>'+esc(k)+' <span class="tt">× '+o.n+'</span></span><span class="tb" style="color:'+(o.sum>=0?'#1d7a37':'#b3202b')+'">'+(o.sum>0?'+':'')+meur(o.sum)+'</span></div>').join('')+
+        '<div class="note" style="margin-top:8px"><b>Prueba de la subida de cláusula:</b> contándola como gasto el descuadre es <b>'+meur(balCheck.diff)+
+        '</b>; sin contarla sería <b>'+meur(balCheck.diff-ci)+'</b>. Gana la hipótesis cuyo descuadre se acerque a 0.</div>'+
+        (dg.sus.length?'<div class="note" style="margin-top:8px"><b>Pistas:</b><br>• '+dg.sus.join('<br>• ')+'</div>':'');
+    }
+    box.innerHTML=head+diag+'<div style="margin-top:8px;max-height:420px;overflow-y:auto">'+
       rows.map(r=>{
         const p=allPlayers[r.player]||{};
         const d=new Date(r.date*1000).toLocaleDateString('es-ES');
@@ -1987,16 +2154,13 @@ async function runBalanceTrail(){
    PUNTOS POR JORNADA Y EQUIPO (base de stats y prediccion)
    ============================================================ */
 function roundPointsMatrix(){
-  const evs=[...loadArch().events].filter(e=>e.type==='roundFinished').sort((a,b)=>a.date-b.date);
   const rounds=[], per={}; teams.forEach(t=>per[t.id]=[]);
-  evs.forEach(ev=>{
-    const rd=ev.content&&ev.content.round;
-    let rn='?'; if(rd){ if(rd.short)rn=rd.short; else if(rd.name){const m=rd.name.match(/\d+/); rn=m?('J'+m[0]):rd.name;} }
-    rounds.push(rn);
-    const res=(ev.content&&ev.content.results)||[];
+  roundEvents().forEach(r=>{
+    rounds.push(roundLabel(r));
+    const res=(r.ev.content&&r.ev.content.results)||[];
     teams.forEach(t=>{
-      const r=res.find(x=>x.user&&String(x.user.id)===String(t.id));
-      per[t.id].push(r&&r.points!=null?r.points:null);
+      const x=res.find(y=>y.user&&String(y.user.id)===String(t.id));
+      per[t.id].push(x&&x.points!=null?x.points:null);
     });
   });
   return {rounds,per};
@@ -2107,25 +2271,29 @@ function simulateSeason(sims){
    de cada linea marcando la posicion actual del equipo.
    ============================================================ */
 function buildPointsSeries(){
-  const evs=[...loadArch().events].filter(e=>e.type==='roundFinished').sort((a,b)=>a.date-b.date);
   const cum={}; teams.forEach(t=>cum[t.id]=0);
   const rounds=[]; const series={}; teams.forEach(t=>series[t.id]=[]);
-  evs.forEach(ev=>{
-    const rd=ev.content&&ev.content.round;
-    let roundName='?';
-    if(rd){
-      if(rd.short) roundName=rd.short;
-      else if(rd.name){ const m=rd.name.match(/\d+/); roundName=m?('J'+m[0]):rd.name; }
-    }
-    rounds.push(roundName);
-    const results=(ev.content&&ev.content.results)||[];
+  roundEvents().forEach(r=>{
+    rounds.push(roundLabel(r));
+    const results=(r.ev.content&&r.ev.content.results)||[];
     teams.forEach(t=>{
       const r=results.find(x=>x.user&&String(x.user.id)===String(t.id));
       if(r&&r.points!=null) cum[t.id]+=r.points;
       series[t.id].push(cum[t.id]);
     });
   });
-  return {rounds,series};
+  // Puntos de salida: quien entro tarde en la liga recibio puntos extra para no ir
+  // rezagado, y esos puntos no aparecen en ningun roundFinished. Sumar solo los de
+  // cada jornada lo dejaba empezando mas abajo que el resto. Se ancla cada serie a
+  // los puntos oficiales de la clasificacion: la diferencia es su punto de partida.
+  const offsets={};
+  teams.forEach(t=>{
+    const fin=series[t.id].length?series[t.id].at(-1):0;
+    const off=(typeof t.points==='number'&&isFinite(t.points))?Math.max(0,t.points-fin):0;
+    offsets[t.id]=off;
+    if(off) series[t.id]=series[t.id].map(v=>v+off);
+  });
+  return {rounds,series,offsets};
 }
 
 async function loadLiga(){
@@ -2189,69 +2357,1435 @@ function renderPrediction(){
   return h;
 }
 
-function renderLiga(){
-  const {rounds,series}=buildPointsSeries();
-  if(!rounds.length){
-    $('lgWrap').innerHTML='<div class="card"><div class="empty">Aún no hay jornadas archivadas.<br>Ve a Ajustes → «Archivar histórico completo».</div></div>';
-    return;
+/* ============================================================
+   GRAFICAS: componente de linea reutilizable (Liga y Economia)
+   - lineas finas, la tuya mas gruesa
+   - vistas intercambiables (puntos, posicion, vs media...)
+   - zoom a las ultimas jornadas y filtro de equipos: el eje se
+     reajusta solo a lo que se ve, asi las lineas dejan de apelotonarse
+   - tocar/arrastrar sobre la grafica fija una jornada y lista a todos
+   - tocar un equipo en la leyenda lo resalta
+   ============================================================ */
+const TEAM_PALETTE=['#e2333f','#2fa84f','#e8a51c','#8e44ad','#16a085','#d35400','#34495e',
+  '#e91e63','#7cb342','#00acc1','#8d6e63','#5c6bc0','#b8860b'];
+const ME_COLOR='#2b8fd6';
+let _tcKey='', _tcMap={};
+function teamColor(id){
+  const key=cfg.userId+'|'+teams.map(t=>t.id).join(',');
+  if(key!==_tcKey){
+    _tcKey=key; _tcMap={};
+    teams.map(t=>String(t.id)).filter(x=>x!==String(cfg.userId)).sort()
+      .forEach((x,i)=>{ _tcMap[x]=TEAM_PALETTE[i%TEAM_PALETTE.length]; });
+    _tcMap[String(cfg.userId)]=ME_COLOR;
   }
-  const n=rounds.length;
-  const W=340,H=230,padL=26,padR=24,padT=12,padB=20;
-  const innerW=W-padL-padR, innerH=H-padT-padB;
-  const maxY=Math.max(1,...teams.map(t=>Math.max(...series[t.id])));
-  const xAt=i=>padL+(n<=1?innerW/2:(i/(n-1))*innerW);
-  const yAt=v=>padT+innerH-(v/maxY)*innerH;
-  const sorted=[...teams].sort((a,b)=>series[b.id].at(-1)-series[a.id].at(-1));
+  return _tcMap[String(id)]||'#7f8c8d';
+}
+const isMe=id=>String(id)===String(cfg.userId);
 
-  let svg='<svg viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block">';
-  [0,0.5,1].forEach(f=>{
-    const yy=padT+innerH-f*innerH;
-    svg+='<line x1="'+padL+'" y1="'+yy+'" x2="'+(W-padR)+'" y2="'+yy+'" stroke="#e2e6e9" stroke-width="1"/>';
-    svg+='<text x="'+(padL-4)+'" y="'+(yy+3)+'" font-size="7" text-anchor="end" fill="#9aa6ad">'+Math.round(f*maxY)+'</text>';
+function niceTicks(min,max,count){
+  if(!(max>min)) return [min];
+  const raw=(max-min)/count, mag=Math.pow(10,Math.floor(Math.log10(raw))), norm=raw/mag;
+  const step=(norm<1.5?1:norm<3?2:norm<7?5:10)*mag, out=[];
+  for(let v=Math.ceil(min/step);v*step<=max+1e-9;v++) out.push(Math.round(v*step*1e6)/1e6);
+  return out;
+}
+const fmtM=v=>{ const a=Math.abs(v); return (v/1e6).toFixed(a<1e7?1:0).replace('.',',').replace(',0','')+'M'; };
+
+const CH={};
+function chartMount(elId,def){
+  const st=CH[elId]=CH[elId]||{view:null,zoom:0,filter:'all',hi:null,cursor:null};
+  st.def=def; st.cache={};
+  if(!def.views.some(v=>v.k===st.view)) st.view=def.views[0].k;
+  chartDraw(elId);
+}
+
+function chartDraw(elId){
+  const el=$(elId); if(!el) return;
+  const st=CH[elId], def=st.def;
+  const view=def.views.find(v=>v.k===st.view)||def.views[0];
+  const D=st.cache[view.k]||(st.cache[view.k]=view.compute());
+  if(!D||!D.labels||!D.labels.length){
+    el.innerHTML='<div class="empty">Aún no hay datos para esta gráfica.</div>'; return;
+  }
+  const n=D.labels.length;
+  const zoomOpts=[[0,'Todo']]; if(n>7)zoomOpts.push([6,'Últimas 6']); if(n>4)zoomOpts.push([3,'Últimas 3']);
+  if(def.zoomDays&&n>20)zoomOpts.splice(1,zoomOpts.length-1,[30,'30 días'],[14,'14 días'],[7,'7 días']);
+  if(!zoomOpts.some(z=>z[0]===st.zoom)) st.zoom=0;
+  const k=(st.zoom&&st.zoom<n)?st.zoom:n, i0=n-k;
+
+  const lastOf=t=>{ const a=D.series[t.id]; for(let i=a.length-1;i>=0;i--) if(a[i]!=null) return a[i]; return null; };
+  let list=teams.filter(t=>D.series[t.id]);
+  list.sort((a,b)=>D.mode==='rank'?((lastOf(a)??1e9)-(lastOf(b)??1e9)):((lastOf(b)??-1e18)-(lastOf(a)??-1e18)));
+  let vis=list;
+  const mi=list.findIndex(t=>isMe(t.id));
+  if(st.filter==='top6'){ vis=list.slice(0,6); if(mi>=6) vis=[...list.slice(0,5),list[mi]]; }
+  if(st.filter==='near'&&mi>=0){ vis=list.slice(Math.max(0,mi-3),mi+4); }
+
+  let lo=Infinity,hi=-Infinity;
+  vis.forEach(t=>{ for(let i=i0;i<n;i++){ const v=D.series[t.id][i]; if(v!=null){ if(v<lo)lo=v; if(v>hi)hi=v; } } });
+  if(!isFinite(lo)){ el.innerHTML='<div class="empty">Sin datos en este tramo.</div>'; return; }
+  const rank=D.mode==='rank';
+  if(rank){ lo=0.5; hi=Math.max(teams.length,hi)+0.5; }
+  else{
+    const pad=(hi-lo)*0.07||1; lo-=pad; hi+=pad;
+    if(D.nonneg&&lo<0) lo=0;
+  }
+  const W=360,H=310,padL=36,padR=30,padT=14,padB=22, innerW=W-padL-padR, innerH=H-padT-padB;
+  const xAt=i=>padL+(k<=1?innerW/2:((i-i0)/(k-1))*innerW);
+  const yAt=v=>rank?padT+((v-lo)/(hi-lo))*innerH:padT+innerH-((v-lo)/(hi-lo))*innerH;
+  const axisFmt=D.axisFmt||D.fmt||(v=>String(Math.round(v)));
+  const fmt=D.fmt||(v=>String(Math.round(v)));
+
+  let svg='<svg viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg" '+
+    'style="width:100%;height:auto;display:block;touch-action:pan-y;user-select:none;-webkit-user-select:none">';
+  const ticks=rank?Array.from({length:teams.length},(_,i)=>i+1).filter((_,i,a)=>a.length<=7||i%2===0||i===a.length-1)
+    :niceTicks(lo,hi,4);
+  ticks.forEach(v=>{
+    const yy=yAt(v);
+    svg+='<line x1="'+padL+'" y1="'+yy.toFixed(1)+'" x2="'+(W-padR)+'" y2="'+yy.toFixed(1)+'" stroke="#e7eaed" stroke-width="1"/>';
+    svg+='<text x="'+(padL-5)+'" y="'+(yy+3).toFixed(1)+'" font-size="8" text-anchor="end" fill="#9aa6ad">'+esc(rank?v:axisFmt(v))+'</text>';
   });
-  if(n>1) rounds.forEach((rn,i)=>{
-    if(n>10&&i%Math.ceil(n/8)!==0&&i!==n-1)return;
-    svg+='<text x="'+xAt(i)+'" y="'+(H-4)+'" font-size="6.5" text-anchor="middle" fill="#9aa6ad">'+esc(rn)+'</text>';
+  if(!rank&&lo<0&&hi>0){
+    svg+='<line x1="'+padL+'" y1="'+yAt(0).toFixed(1)+'" x2="'+(W-padR)+'" y2="'+yAt(0).toFixed(1)+'" stroke="#b9c2c8" stroke-width="1.2"/>';
+  }
+  const maxLab=8, stepL=Math.max(1,Math.ceil(k/maxLab));
+  for(let i=i0;i<n;i++){
+    if(i!==n-1&&(((i-i0)%stepL!==0)||(n-1-i)<stepL*0.7)) continue;
+    svg+='<text x="'+xAt(i).toFixed(1)+'" y="'+(H-6)+'" font-size="8" text-anchor="middle" fill="#9aa6ad">'+esc(D.labels[i])+'</text>';
+  }
+
+  const dim=t=>st.hi!=null&&String(st.hi)!==String(t.id);
+  // lineas: primero las ajenas, la tuya y la resaltada encima
+  const drawOrder=[...vis].sort((a,b)=>{
+    const wa=(isMe(a.id)?1:0)+(String(st.hi)===String(a.id)?2:0), wb=(isMe(b.id)?1:0)+(String(st.hi)===String(b.id)?2:0);
+    return wa-wb;
+  });
+  drawOrder.forEach(t=>{
+    const a=D.series[t.id]; let d='', pen=false;
+    for(let i=i0;i<n;i++){
+      if(a[i]==null){ pen=false; continue; }
+      d+=(pen?'L':'M')+xAt(i).toFixed(1)+','+yAt(a[i]).toFixed(1); pen=true;
+    }
+    const strong=isMe(t.id)||String(st.hi)===String(t.id);
+    svg+='<path d="'+d+'" fill="none" stroke="'+teamColor(t.id)+'" stroke-width="'+(strong?2.6:1.15)+'" '+
+      'stroke-linejoin="round" stroke-linecap="round" opacity="'+(dim(t)?0.16:(strong?1:0.85))+'"/>';
+    if(D.dots||k<=8){
+      for(let i=i0;i<n;i++){ if(a[i]==null)continue;
+        svg+='<circle cx="'+xAt(i).toFixed(1)+'" cy="'+yAt(a[i]).toFixed(1)+'" r="'+(strong?2.2:1.4)+'" fill="'+teamColor(t.id)+'" opacity="'+(dim(t)?0.16:1)+'"/>'; }
+    }
   });
 
-  sorted.forEach((t,idx)=>{
-    const color=LIGA_PALETTE[idx%LIGA_PALETTE.length];
-    const me=String(t.id)===String(cfg.userId);
-    const pts=series[t.id].map((v,i)=>xAt(i)+','+yAt(v)).join(' ');
-    svg+='<polyline points="'+pts+'" fill="none" stroke="'+color+'" stroke-width="'+(me?3:1.6)+'" '+
-      'stroke-linejoin="round" stroke-linecap="round" opacity="'+(me?1:0.75)+'"/>';
-  });
+  svg+='<g id="'+elId+'-cur"></g>';
 
-  sorted.forEach((t,idx)=>{
-    const lastV=series[t.id].at(-1);
-    const cx=xAt(n-1), cy=yAt(lastV), r=6;
-    const color=LIGA_PALETTE[idx%LIGA_PALETTE.length];
-    const img=IMG_USER(t.icon);
+  // marcadores con el icono, separados para que no se pisen
+  const R=5.4, gap=2*R+1.4;
+  const mk=vis.map(t=>{
+    const a=D.series[t.id]; let li=-1; for(let i=n-1;i>=i0;i--) if(a[i]!=null){li=i;break;}
+    if(li<0) return null;
+    const cy=yAt(a[li]); return {t,cx:xAt(li),cy,dy:cy};
+  }).filter(Boolean).sort((a,b)=>a.cy-b.cy);
+  for(let i=1;i<mk.length;i++) if(mk[i].dy<mk[i-1].dy+gap) mk[i].dy=mk[i-1].dy+gap;
+  const bottom=H-padB+6, over=mk.length?mk[mk.length-1].dy-bottom:0;
+  if(over>0){ mk.forEach(m=>m.dy-=over); for(let i=mk.length-2;i>=0;i--) if(mk[i].dy>mk[i+1].dy-gap) mk[i].dy=mk[i+1].dy-gap; }
+  mk.forEach(m=>{
+    const t=m.t, col=teamColor(t.id), img=IMG_USER(t.icon), cx=m.cx, cy=m.dy, op=dim(t)?0.3:1;
+    if(Math.abs(m.dy-m.cy)>1.5)
+      svg+='<line x1="'+m.cx.toFixed(1)+'" y1="'+m.cy.toFixed(1)+'" x2="'+cx.toFixed(1)+'" y2="'+cy.toFixed(1)+'" stroke="'+col+'" stroke-width="0.8" opacity="'+op+'"/>';
     if(img){
-      svg+='<clipPath id="lgclip-'+t.id+'"><circle cx="'+cx+'" cy="'+cy+'" r="'+r+'"/></clipPath>';
-      svg+='<circle cx="'+cx+'" cy="'+cy+'" r="'+(r+1.6)+'" fill="#fff" stroke="'+color+'" stroke-width="1.6"/>';
-      svg+='<image href="'+img+'" x="'+(cx-r)+'" y="'+(cy-r)+'" width="'+(r*2)+'" height="'+(r*2)+'" '+
-        'clip-path="url(#lgclip-'+t.id+')" preserveAspectRatio="xMidYMid slice"/>';
+      svg+='<clipPath id="'+elId+'-c-'+t.id+'"><circle cx="'+cx.toFixed(1)+'" cy="'+cy.toFixed(1)+'" r="'+R+'"/></clipPath>'+
+        '<circle cx="'+cx.toFixed(1)+'" cy="'+cy.toFixed(1)+'" r="'+(R+1.5)+'" fill="#fff" stroke="'+col+'" stroke-width="1.5" opacity="'+op+'"/>'+
+        '<image href="'+img+'" x="'+(cx-R).toFixed(1)+'" y="'+(cy-R).toFixed(1)+'" width="'+(R*2)+'" height="'+(R*2)+'" '+
+        'clip-path="url(#'+elId+'-c-'+t.id+')" preserveAspectRatio="xMidYMid slice" opacity="'+op+'"/>';
     }else{
-      svg+='<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="'+color+'"/>';
-      svg+='<text x="'+cx+'" y="'+(cy+2.3)+'" font-size="5.2" text-anchor="middle" fill="#fff" font-weight="700">'+esc(initials(t.name))+'</text>';
+      svg+='<circle cx="'+cx.toFixed(1)+'" cy="'+cy.toFixed(1)+'" r="'+R+'" fill="'+col+'" opacity="'+op+'"/>'+
+        '<text x="'+cx.toFixed(1)+'" y="'+(cy+2).toFixed(1)+'" font-size="5" text-anchor="middle" fill="#fff" font-weight="700">'+esc(initials(t.name))+'</text>';
     }
   });
   svg+='</svg>';
 
-  const legend='<div style="margin-top:10px">'+sorted.map((t,idx)=>{
-    const me=String(t.id)===String(cfg.userId);
-    const color=LIGA_PALETTE[idx%LIGA_PALETTE.length];
-    return '<div class="bidrow"><span><span style="display:inline-block;width:9px;height:9px;border-radius:50%;'+
-      'background:'+color+';margin-right:6px;vertical-align:middle"></span>'+esc(t.name)+
-      (me?' <span class="tag dark">tú</span>':'')+'</span><b>'+series[t.id].at(-1)+' pts</b></div>';
+  const chip=(grp,val,label,on)=>'<div class="chip'+(on?' on':'')+'" data-ck="'+grp+':'+val+'">'+label+'</div>';
+  let controls='';
+  if(def.views.length>1)
+    controls+='<div class="chips" style="margin-bottom:6px;flex-wrap:wrap">'+def.views.map(v=>chip('view',v.k,v.label,v.k===view.k)).join('')+'</div>';
+  controls+='<div class="chips" style="margin-bottom:8px;flex-wrap:wrap">'+
+    zoomOpts.map(z=>chip('zoom',z[0],z[1],z[0]===st.zoom)).join('')+
+    '<span style="flex:0 0 10px"></span>'+
+    chip('filter','all','Todos',st.filter==='all')+chip('filter','top6','Top 6',st.filter==='top6')+chip('filter','near','Cerca de mí',st.filter==='near')+
+    '</div>';
+
+  const legend='<div style="margin-top:6px">'+vis.map(t=>{
+    const v=lastOf(t), on=String(st.hi)===String(t.id);
+    return '<div class="bidrow" data-hi="'+t.id+'" style="cursor:pointer;'+(on?'background:#f3f6f8;':'')+(dim(t)?'opacity:.45;':'')+'"><span>'+
+      '<span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:'+teamColor(t.id)+';margin-right:6px;vertical-align:middle"></span>'+
+      esc(t.name)+(isMe(t.id)?' <span class="tag dark">tú</span>':'')+(def.tag?def.tag(t):'')+'</span><b>'+(v==null?'—':esc(fmt(v)))+'</b></div>';
   }).join('')+'</div>';
 
-  $('lgWrap').innerHTML='<div class="card">'+svg+legend+
-    '<div class="note" style="margin-top:8px">'+n+' jornada'+(n===1?'':'s')+' archivadas. '+
-    'El icono marca la posición y puntos actuales de cada equipo — la línea gruesa es la tuya.</div></div>'
-    + renderPrediction();
+  el.innerHTML=controls+svg+'<div id="'+elId+'-pn" class="note" style="margin-top:8px"></div>'+legend+
+    (def.note?'<div class="note" style="margin-top:8px">'+def.note+'</div>':'');
+
+  st.geo={D,vis,i0,n,k,xAt,yAt,W,padL,innerW,padT,innerH,fmt,rank,labels:D.labels};
+  chartCursor(elId);
+
+  el.querySelectorAll('[data-ck]').forEach(c=>c.onclick=()=>{
+    const [g,v]=c.dataset.ck.split(':');
+    if(g==='view'){ st.view=v; st.cursor=null; } else if(g==='zoom'){ st.zoom=Number(v); st.cursor=null; } else st.filter=v;
+    chartDraw(elId);
+  });
+  el.querySelectorAll('[data-hi]').forEach(r=>r.onclick=()=>{
+    st.hi=String(st.hi)===r.dataset.hi?null:r.dataset.hi; chartDraw(elId);
+  });
+  const svgEl=el.querySelector('svg');
+  const pick=ev=>{
+    const r=svgEl.getBoundingClientRect(); if(!r.width)return;
+    const x=(ev.clientX-r.left)/r.width*W;
+    let idx=Math.round(i0+((x-padL)/innerW)*(k-1)); idx=Math.max(i0,Math.min(n-1,idx));
+    if(st.cursor!==idx){ st.cursor=idx; chartCursor(elId); }
+  };
+  svgEl.addEventListener('pointerdown',pick);
+  svgEl.addEventListener('pointermove',e=>{ if(e.pointerType==='mouse'?e.buttons===1:true) pick(e); });
 }
+
+// Marca de la jornada elegida + lista ordenada de todos en ese punto (sin redibujar la grafica entera)
+function chartCursor(elId){
+  const st=CH[elId], G=st&&st.geo, g=$(elId+'-cur'), pn=$(elId+'-pn'); if(!G||!g||!pn) return;
+  const i=st.cursor;
+  if(i==null||i<G.i0||i>=G.n){
+    g.innerHTML='';
+    pn.innerHTML='Toca o arrastra sobre la gráfica para ver a todos en cada punto.'; return;
+  }
+  const x=G.xAt(i);
+  let s='<line x1="'+x.toFixed(1)+'" y1="'+G.padT+'" x2="'+x.toFixed(1)+'" y2="'+(G.padT+G.innerH)+'" stroke="#14181b" stroke-width="0.8" stroke-dasharray="3 2"/>';
+  const rows=[];
+  G.vis.forEach(t=>{
+    const v=G.D.series[t.id][i]; if(v==null)return;
+    rows.push({t,v});
+    s+='<circle cx="'+x.toFixed(1)+'" cy="'+G.yAt(v).toFixed(1)+'" r="2.6" fill="#fff" stroke="'+teamColor(t.id)+'" stroke-width="1.4"/>';
+  });
+  g.innerHTML=s;
+  rows.sort((a,b)=>G.rank?a.v-b.v:b.v-a.v);
+  pn.innerHTML='<b>'+esc(G.labels[i])+'</b><div style="display:grid;grid-template-columns:1fr 1fr;gap:2px 14px;margin-top:6px">'+
+    rows.map((r,j)=>'<div style="display:flex;justify-content:space-between;gap:6px;font-size:.72rem"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+
+      '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:'+teamColor(r.t.id)+';margin-right:4px"></span>'+
+      (j+1)+'. '+(isMe(r.t.id)?'<b>':'')+esc(r.t.name)+(isMe(r.t.id)?'</b>':'')+'</span><b style="font-family:var(--mono)">'+esc(G.fmt(r.v))+'</b></div>').join('')+'</div>';
+}
+
+/* ---------- Orden por jornada y matrices compartidas ---------- */
+function eventItems(ev){ return Array.isArray(ev.content)?ev.content:(ev.content?[ev.content]:[]); }
+
+// Las jornadas se ordenan por su NUMERO, no por la fecha en que se cerraron:
+// un aplazado hace que J6 cierre despues de J9 y la grafica salia desordenada.
+function roundEvents(){
+  const num=e=>{ const rd=e.content&&e.content.round; if(!rd)return null;
+    if(rd.name){ const m=String(rd.name).match(/\d+/); if(m) return Number(m[0]); }
+    return typeof rd.id==='number'?rd.id:null; };
+  return loadArch().events.filter(e=>e.type==='roundFinished')
+    .map(e=>({ev:e,num:num(e)}))
+    .sort((a,b)=>(a.num!=null&&b.num!=null&&a.num!==b.num)?a.num-b.num:a.ev.date-b.ev.date);
+}
+const roundLabel=r=>{ const rd=(r.ev.content&&r.ev.content.round)||{};
+  if(rd.short) return rd.short; if(r.num!=null) return 'J'+r.num; return rd.name||'?'; };
+
+function leagueMatrix(){
+  const {rounds,per}=roundPointsMatrix();
+  const S=buildPointsSeries(), n=rounds.length;
+  const rankCum={}, rankRound={}; teams.forEach(t=>{rankCum[t.id]=[];rankRound[t.id]=[];});
+  const rankAt=(getter,store,i)=>{
+    const arr=teams.map(t=>({id:t.id,v:getter(t)})).filter(x=>x.v!=null).sort((a,b)=>b.v-a.v);
+    let r=0,prev=null,c=0;
+    arr.forEach(x=>{ c++; if(x.v!==prev){r=c;prev=x.v;} store[x.id][i]=r; });
+    teams.forEach(t=>{ if(store[t.id][i]===undefined) store[t.id][i]=null; });
+  };
+  for(let i=0;i<n;i++){
+    rankAt(t=>S.series[t.id][i],rankCum,i);
+    rankAt(t=>per[t.id][i],rankRound,i);
+  }
+  return {rounds,per,series:S.series,offsets:S.offsets,rankCum,rankRound,n};
+}
+
+function ligaViews(){
+  const seriesMap=f=>{ const M=leagueMatrix(); const out={};
+    teams.forEach(t=>out[t.id]=M.rounds.map((_,i)=>f(t,i,M))); return {M,out}; };
+  return [
+    {k:'cum',label:'Puntos',compute:()=>{ const M=leagueMatrix(); return {labels:M.rounds,series:M.series,mode:'abs',nonneg:true}; }},
+    {k:'rank',label:'Posición',compute:()=>{ const M=leagueMatrix(); return {labels:M.rounds,series:M.rankCum,mode:'rank',dots:true,fmt:v=>v+'º'}; }},
+    {k:'avg',label:'Vs media',compute:()=>{
+      const {M,out}=seriesMap((t,i,M)=>{
+        const vals=teams.map(x=>M.series[x.id][i]).filter(v=>v!=null);
+        const m=vals.reduce((a,b)=>a+b,0)/Math.max(1,vals.length);
+        return M.series[t.id][i]==null?null:M.series[t.id][i]-m;
+      });
+      return {labels:M.rounds,series:out,mode:'abs',fmt:v=>(v>0?'+':'')+Math.round(v)};
+    }},
+    {k:'lead',label:'Al líder',compute:()=>{
+      const {M,out}=seriesMap((t,i,M)=>{
+        const mx=Math.max(...teams.map(x=>M.series[x.id][i]).filter(v=>v!=null));
+        return M.series[t.id][i]==null?null:M.series[t.id][i]-mx;
+      });
+      return {labels:M.rounds,series:out,mode:'abs',fmt:v=>Math.round(v)+''};
+    }},
+    {k:'round',label:'Por jornada',compute:()=>{ const M=leagueMatrix(); return {labels:M.rounds,series:M.per,mode:'abs',dots:true,nonneg:true}; }}
+  ];
+}
+
+function renderLiga(){
+  const {rounds,offsets}=buildPointsSeries();
+  if(!rounds.length){
+    $('lgWrap').innerHTML='<div class="card"><div class="empty">Aún no hay jornadas archivadas.<br>Ve a Ajustes → «Archivar histórico completo».</div></div>';
+    return;
+  }
+  $('lgWrap').innerHTML='<div class="card" id="lgChart"></div>'+renderPrediction();
+  chartMount('lgChart',{
+    views:ligaViews(),
+    tag:t=>offsets[t.id]?' <span class="tag" title="Puntos de salida">+'+offsets[t.id]+' de salida</span>':'',
+    note:rounds.length+' jornada'+(rounds.length===1?'':'s')+' archivadas, ordenadas por número de jornada. '+
+      '<b>Vista</b> cambia lo que se dibuja (<i>Vs media</i> y <i>Al líder</i> separan las líneas que van pegadas). '+
+      '<b>Zoom</b> y <b>Cerca de mí</b> reajustan el eje a lo que ves. Toca un equipo de la lista para resaltarlo.'
+  });
+}
+
+/* ============================================================
+   ECONOMIA DE LA LIGA
+   Todo se reconstruye del archivo de eventos desde el reinicio, con
+   las mismas reglas que computeBalances(). Solo MI saldo se contrasta
+   con el real; el de los rivales es reconstruido.
+   ============================================================ */
+let ecMode='patrimonio', ET=null;
+document.querySelectorAll('#ecChips .chip').forEach(c=>c.onclick=()=>{
+  document.querySelectorAll('#ecChips .chip').forEach(x=>x.classList.remove('on'));
+  c.classList.add('on'); ecMode=c.dataset.ec; renderEconomia();
+});
+
+const dmy=ts=>{ const d=new Date(ts*1000); return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0'); };
+
+function econTimeline(){
+  const all=loadArch().events;
+  const reset=all.filter(e=>e.type==='leagueReset').reduce((m,e)=>Math.max(m,e.date),0);
+  const evs=all.filter(e=>e.date>=reset&&e.type!=='leagueReset').sort((a,b)=>a.date-b.date);
+  if(!evs.length) return null;
+  const st={}, blank=()=>({bal:INITIAL_BALANCE,spent:0,earned:0,buys:0,sells:0,prize:0,prizeN:0,streak:0,streakN:0,
+    claus:0,clausN:0,maxBuy:{amount:0,player:null},maxSell:{amount:0,player:null},maxClaus:{amount:0,player:null}});
+  teams.forEach(t=>st[t.id]=blank());
+  const apply=ev=>{
+    if(ev.type==='roundFinished'){
+      ((ev.content&&ev.content.results)||[]).forEach(r=>{
+        const s=r.user&&st[r.user.id]; if(s&&r.bonus!=null){ s.bal+=r.bonus; s.prize+=r.bonus; s.prizeN++; }
+      }); return;
+    }
+    eventItems(ev).forEach(it=>{
+      if(!it||it.amount==null) return;
+      let s;
+      if(ev.type==='bonus'&&it.user&&(s=st[it.user.id])){ s.bal+=it.amount; s.streak+=it.amount; s.streakN++; }
+      if(ev.type==='clauseIncrement'&&it.user&&(s=st[it.user.id])){
+        s.bal-=it.amount; s.claus+=it.amount; s.clausN++; if(it.amount>s.maxClaus.amount) s.maxClaus={amount:it.amount,player:it.player}; }
+      if(it.from&&(s=st[it.from.id])){ s.bal+=it.amount; s.earned+=it.amount; s.sells++; if(it.amount>s.maxSell.amount) s.maxSell={amount:it.amount,player:it.player}; }
+      if(it.to&&(s=st[it.to.id])){ s.bal-=it.amount; s.spent+=it.amount; s.buys++; if(it.amount>s.maxBuy.amount) s.maxBuy={amount:it.amount,player:it.player}; }
+    });
+  };
+  const first=new Date((reset||evs[0].date)*1000); first.setHours(0,0,0,0);
+  const end=new Date(); end.setHours(0,0,0,0);
+  const days=[]; for(const d=new Date(first); d<=end; d.setDate(d.getDate()+1)) days.push(d.getTime()/1000);
+  const cats=['bal','spent','earned','prize','streak','claus'], S={};
+  cats.forEach(c=>{ S[c]={}; teams.forEach(t=>S[c][t.id]=[]); });
+  let k=0;
+  days.forEach((d,di)=>{
+    const lim=di+1<days.length?days[di+1]:Infinity;
+    while(k<evs.length&&evs[k].date<lim){ apply(evs[k]); k++; }
+    teams.forEach(t=>cats.forEach(c=>S[c][t.id].push(st[t.id][c])));
+  });
+  return {labels:days.map(dmy),S,final:st,complete:reset>0,reset,evs};
+}
+
+/* ---------- piezas de dibujo ---------- */
+function ecName(t){ return isMe(t.id)?'<b>'+esc(t.name)+'</b>':esc(t.name); }
+function barRows(rows,fmt,colorOf){
+  const mx=Math.max(...rows.map(r=>Math.abs(r.v)),1e-9);
+  return rows.map(r=>'<div class="hbar"><div class="hn" style="flex-basis:118px">'+ecName(r.t)+'</div>'+
+    '<div class="ht"><i style="width:'+Math.round(Math.max(r.v,0)/mx*100)+'%;background:'+(colorOf?colorOf(r):(isMe(r.t.id)?'var(--black)':'var(--red)'))+'"></i></div>'+
+    '<div class="hv" style="flex-basis:66px">'+fmt(r.v)+'</div></div>').join('');
+}
+function divRows(rows,fmt){
+  const mx=Math.max(...rows.map(r=>Math.abs(r.v)),1e-9);
+  return rows.map(r=>'<div class="hbar"><div class="hn" style="flex-basis:118px">'+ecName(r.t)+'</div>'+
+    '<div style="flex:1;position:relative;height:14px;background:#f1f3f4;border-radius:3px">'+
+    '<div style="position:absolute;left:50%;top:0;bottom:0;width:1px;background:#b9c2c8"></div>'+
+    '<i style="position:absolute;top:0;bottom:0;'+(r.v>=0?'left:50%;':'right:50%;')+'width:'+(Math.abs(r.v)/mx*50)+'%;background:'+(r.v>=0?'#2fa84f':'#e2333f')+';border-radius:3px"></i></div>'+
+    '<div class="hv" style="flex-basis:70px">'+fmt(r.v)+'</div></div>').join('');
+}
+function stackRows(rows,segs){
+  const mx=Math.max(...rows.map(r=>r.total),1);
+  return '<div style="display:flex;gap:12px;flex-wrap:wrap;font-size:.7rem;color:var(--muted);margin:2px 0 4px">'+
+    segs.map(s=>'<span><i style="display:inline-block;width:9px;height:9px;border-radius:2px;background:'+s.color+';margin-right:4px"></i>'+s.label+'</span>').join('')+'</div>'+
+    rows.map(r=>{
+      const neg=r.parts.map(p=>Math.max(p,0)), tot=neg.reduce((a,b)=>a+b,0)||1;
+      return '<div style="padding:6px 0"><div style="display:flex;justify-content:space-between;font-size:.78rem"><span>'+ecName(r.t)+'</span><b class="eur">'+meur(r.total)+'</b></div>'+
+        '<div style="display:flex;height:12px;border-radius:3px;overflow:hidden;background:#eceff1;margin-top:4px;width:'+Math.max(2,Math.max(r.total,0)/mx*100)+'%">'+
+        neg.map((p,i)=>'<i style="display:block;height:100%;width:'+(p/tot*100)+'%;background:'+segs[i].color+'"></i>').join('')+'</div>'+
+        (r.sub?'<div style="font-size:.66rem;color:var(--muted);margin-top:2px">'+r.sub+'</div>':'')+'</div>';
+    }).join('');
+}
+function gini(a){
+  const v=a.map(x=>Math.max(0,x)).sort((x,y)=>x-y), n=v.length, s=v.reduce((p,q)=>p+q,0);
+  if(!n||!s) return 0;
+  let c=0; v.forEach((x,i)=>c+=(i+1)*x);
+  return (2*c)/(n*s)-(n+1)/n;
+}
+function ols(pts){
+  const n=pts.length; if(n<3) return null;
+  const mx=pts.reduce((a,p)=>a+p.x,0)/n, my=pts.reduce((a,p)=>a+p.y,0)/n;
+  let nu=0,de=0; pts.forEach(p=>{nu+=(p.x-mx)*(p.y-my);de+=(p.x-mx)*(p.x-mx);});
+  if(!de) return null;
+  const b=nu/de, a=my-b*mx; let sr=0,st=0; pts.forEach(p=>{sr+=Math.pow(p.y-(a+b*p.x),2);st+=Math.pow(p.y-my,2);});
+  return {a,b,r2:st>0?Math.max(0,1-sr/st):0};
+}
+function scatterSVG(pts,xFmt){
+  const W=360,H=300,pl=40,pr=18,pt=14,pb=30, iw=W-pl-pr, ih=H-pt-pb;
+  let x0=Math.min(...pts.map(p=>p.x)),x1=Math.max(...pts.map(p=>p.x)),y0=Math.min(...pts.map(p=>p.y)),y1=Math.max(...pts.map(p=>p.y));
+  const px=(x1-x0)*0.08||1, py=(y1-y0)*0.08||1; x0-=px;x1+=px;y0-=py;y1+=py;
+  const X=v=>pl+((v-x0)/(x1-x0))*iw, Y=v=>pt+ih-((v-y0)/(y1-y0))*ih;
+  let s='<svg viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block">';
+  niceTicks(y0,y1,4).forEach(v=>{ s+='<line x1="'+pl+'" y1="'+Y(v).toFixed(1)+'" x2="'+(W-pr)+'" y2="'+Y(v).toFixed(1)+'" stroke="#e7eaed"/>'+
+    '<text x="'+(pl-5)+'" y="'+(Y(v)+3).toFixed(1)+'" font-size="8" text-anchor="end" fill="#9aa6ad">'+Math.round(v)+'</text>'; });
+  niceTicks(x0,x1,4).forEach(v=>{ s+='<line x1="'+X(v).toFixed(1)+'" y1="'+pt+'" x2="'+X(v).toFixed(1)+'" y2="'+(pt+ih)+'" stroke="#f0f2f4"/>'+
+    '<text x="'+X(v).toFixed(1)+'" y="'+(H-14)+'" font-size="8" text-anchor="middle" fill="#9aa6ad">'+esc(xFmt(v))+'</text>'; });
+  const fit=ols(pts);
+  if(fit) s+='<line x1="'+X(x0).toFixed(1)+'" y1="'+Y(fit.a+fit.b*x0).toFixed(1)+'" x2="'+X(x1).toFixed(1)+'" y2="'+Y(fit.a+fit.b*x1).toFixed(1)+'" stroke="#14181b" stroke-width="1" stroke-dasharray="4 3" opacity=".6"/>';
+  s+='<text x="'+(pl+iw/2)+'" y="'+(H-2)+'" font-size="8.5" text-anchor="middle" fill="#6b7785">Valor de plantilla (M€)</text>'+
+     '<text transform="translate(9,'+(pt+ih/2)+') rotate(-90)" font-size="8.5" text-anchor="middle" fill="#6b7785">Puntos</text>';
+  pts.forEach(p=>{
+    const t=p.t, cx=X(p.x), cy=Y(p.y), R=6, col=teamColor(t.id), img=IMG_USER(t.icon);
+    if(img) s+='<clipPath id="sc-'+t.id+'"><circle cx="'+cx.toFixed(1)+'" cy="'+cy.toFixed(1)+'" r="'+R+'"/></clipPath>'+
+      '<circle cx="'+cx.toFixed(1)+'" cy="'+cy.toFixed(1)+'" r="'+(R+1.5)+'" fill="#fff" stroke="'+col+'" stroke-width="1.6"/>'+
+      '<image href="'+img+'" x="'+(cx-R).toFixed(1)+'" y="'+(cy-R).toFixed(1)+'" width="'+(R*2)+'" height="'+(R*2)+'" clip-path="url(#sc-'+t.id+')" preserveAspectRatio="xMidYMid slice"/>';
+    else s+='<circle cx="'+cx.toFixed(1)+'" cy="'+cy.toFixed(1)+'" r="'+R+'" fill="'+col+'"/>';
+  });
+  return {svg:s+'</svg>',fit};
+}
+
+/* ---------- carga y render ---------- */
+async function loadEconomia(){
+  if(!connected()){show('ajustes');return}
+  const b=$('bEcon'); b.disabled=true; b.textContent='…';
+  try{ await loadBase(); computeBalances(); ET=econTimeline(); renderEconomia(); }
+  catch(err){ $('ecWrap').innerHTML='<div class="card"><div class="empty">Error: '+esc(err.message)+'</div></div>'; }
+  b.disabled=false; b.textContent='Calcular';
+}
+
+function renderEconomia(){
+  const w=$('ecWrap');
+  if(!teams.length){ w.innerHTML='<div class="card"><div class="empty">Pulsa «Calcular».</div></div>'; return; }
+  const F=ET?ET.final:{};
+  const warn=(ET&&!ET.complete)?'<div class="card"><div class="note" style="color:#b3202b"><b>Falta el reinicio de liga en el archivo.</b> Pulsa «Archivar histórico completo» en Ajustes para que los saldos y flujos sean fiables.</div></div>':'';
+  let h=warn;
+
+  if(ecMode==='patrimonio'){
+    const rows=teams.map(t=>{ const c=balances[t.id]||0, v=t.teamValue||0;
+      return {t,parts:[c,v],total:Math.max(c,0)+v,cash:c,val:v,
+        sub:'caja '+meur(c)+' · plantilla '+meur(v)+' · '+(Math.max(c,0)+v>0?Math.round(Math.max(c,0)/(Math.max(c,0)+v)*100):0)+'% líquido'}; })
+      .sort((a,b)=>b.total-a.total);
+    const cash=rows.reduce((a,r)=>a+r.cash,0), val=rows.reduce((a,r)=>a+r.val,0), tot=cash+val;
+    const g=gini(rows.map(r=>r.total)), gc=gini(rows.map(r=>r.cash));
+    const me=rows.findIndex(r=>isMe(r.t.id));
+    h+='<div class="card"><h3>Patrimonio de la liga</h3><div class="kpis" style="margin-top:10px">'+
+      '<div class="kpi"><div class="v">'+meur(tot)+'</div><div class="k">Total</div></div>'+
+      '<div class="kpi"><div class="v">'+meur(tot/rows.length)+'</div><div class="k">Media/equipo</div></div>'+
+      '<div class="kpi"><div class="v">'+(tot?Math.round(cash/tot*100):0)+'%</div><div class="k">En caja</div></div></div>'+
+      '<div class="kpis"><div class="kpi"><div class="v">'+(me>=0?(me+1)+'º':'—')+'</div><div class="k">Tu puesto</div></div>'+
+      '<div class="kpi"><div class="v">'+g.toFixed(2).replace('.',',')+'</div><div class="k">Desigualdad</div></div>'+
+      '<div class="kpi"><div class="v">'+gc.toFixed(2).replace('.',',')+'</div><div class="k">Desig. caja</div></div></div>'+
+      '<div class="note" style="margin-top:10px">Patrimonio = caja + valor de plantilla. La <b>desigualdad</b> es un índice de Gini (0 = todos igual, 1 = uno lo tiene todo). Las cajas de los rivales son <b>reconstruidas</b> desde el tablón, no reales.</div></div>';
+    h+='<div class="card"><h3>Quién tiene más</h3>'+stackRows(rows,[{label:'Caja',color:'#2fa84f'},{label:'Plantilla',color:'#14181b'}])+'</div>';
+    const neg=rows.filter(r=>r.cash<0);
+    if(neg.length) h+='<div class="card"><div class="note" style="color:#b3202b"><b>En negativo ahora mismo:</b> '+neg.map(r=>esc(r.t.name)+' ('+meur(r.cash)+')').join(' · ')+'</div></div>';
+    const dorm=[...rows].sort((a,b)=>b.cash-a.cash)[0];
+    h+='<div class="rec"><div class="rk">Dinero dormido</div><div class="rv">'+meur(dorm.cash)+'</div><div class="rd">'+esc(dorm.t.name)+
+      ' es quien más caja tiene parada. Un manager con mucho efectivo y poca plantilla es quien puede arrasar en subastas y cláusulas.</div></div>';
+  }
+
+  if(ecMode==='evolucion'){
+    if(!ET){ h+='<div class="card"><div class="empty">Aún no hay eventos archivados desde el reinicio.</div></div>'; }
+    else{
+      h+='<div class="card"><h3 style="margin:0 0 8px">Evolución día a día</h3><div id="ecChart"></div></div>';
+      const mkv=(k,label,cat,nonneg)=>({k,label,compute:()=>({labels:ET.labels,series:ET.S[cat],mode:'abs',nonneg,fmt:v=>meur(v),axisFmt:fmtM})});
+      w.innerHTML=h;
+      chartMount('ecChart',{
+        zoomDays:true,
+        views:[mkv('bal','Saldo','bal',false),mkv('spent','Gastado','spent',true),mkv('earned','Ventas','earned',true),
+          mkv('prize','Premios','prize',true),mkv('streak','Racha','streak',true),mkv('claus','Blindajes','claus',true)],
+        note:'Reconstruido evento a evento desde el reinicio ('+ET.labels.length+' días). <b>Saldo</b> es la caja; <b>Gastado</b>/<b>Ventas</b> son lo acumulado en fichajes y traspasos; '+
+          '<b>Premios</b> el dinero cobrado por jornada; <b>Racha</b> los bonos diarios; <b>Blindajes</b> lo pagado por subir cláusulas.'
+      });
+      return;
+    }
+  }
+
+  if(ecMode==='flujos'){
+    if(!ET){ h+='<div class="card"><div class="empty">Sin datos.</div></div>'; }
+    else{
+      const rows=teams.map(t=>({t,s:F[t.id]})).filter(r=>r.s);
+      const vol=rows.reduce((a,r)=>a+r.s.spent,0), ops=rows.reduce((a,r)=>a+r.s.buys,0);
+      h+='<div class="card"><h3>Mercado de traspasos</h3><div class="kpis" style="margin-top:10px">'+
+        '<div class="kpi"><div class="v">'+meur(vol)+'</div><div class="k">Dinero movido</div></div>'+
+        '<div class="kpi"><div class="v">'+ops+'</div><div class="k">Operaciones</div></div>'+
+        '<div class="kpi"><div class="v">'+(ops?meur(vol/ops):'—')+'</div><div class="k">Media/operación</div></div></div></div>';
+      h+='<div class="card"><h3>Balance neto de traspasos</h3><div class="note">Ventas − compras. Verde: ha ingresado más de lo que ha gastado.</div><div style="margin-top:8px">'+
+        divRows(rows.map(r=>({t:r.t,v:r.s.earned-r.s.spent})).sort((a,b)=>b.v-a.v),v=>(v>0?'+':'')+meur(v))+'</div></div>';
+      h+='<div class="card"><h3>Gasto en fichajes</h3><div style="margin-top:6px">'+
+        barRows(rows.map(r=>({t:r.t,v:r.s.spent})).sort((a,b)=>b.v-a.v),meur)+'</div></div>';
+      h+='<div class="card"><h3>Ingresos por ventas</h3><div style="margin-top:6px">'+
+        barRows(rows.map(r=>({t:r.t,v:r.s.earned})).sort((a,b)=>b.v-a.v),meur,()=>'#2fa84f')+'</div></div>';
+      h+='<div class="card"><h3>Blindajes (subidas de cláusula)</h3><div class="note">Lo que cada uno ha pagado por subir cláusulas.</div><div style="margin-top:6px">'+
+        barRows(rows.map(r=>({t:r.t,v:r.s.claus})).sort((a,b)=>b.v-a.v),meur,()=>'#e8a51c')+'</div></div>';
+      const pn=pid=>esc((allPlayers[pid]||{}).name||('#'+pid));
+      h+='<div class="card"><h3>Mayores operaciones por manager</h3><div style="margin-top:6px">'+
+        rows.filter(r=>r.s.maxBuy.amount||r.s.maxSell.amount).sort((a,b)=>b.s.maxBuy.amount-a.s.maxBuy.amount).map(r=>
+          '<div class="diagrow"><div class="dt"><b>'+esc(r.t.name)+'</b><span class="eur">'+r.s.buys+' compras · '+r.s.sells+' ventas</span></div>'+
+          '<div class="dd">Mayor fichaje: '+(r.s.maxBuy.amount?pn(r.s.maxBuy.player)+' ('+meur(r.s.maxBuy.amount)+')':'—')+
+          ' · Mayor venta: '+(r.s.maxSell.amount?pn(r.s.maxSell.player)+' ('+meur(r.s.maxSell.amount)+')':'—')+'</div></div>').join('')+'</div></div>';
+    }
+  }
+
+  if(ecMode==='ingresos'){
+    if(!ET){ h+='<div class="card"><div class="empty">Sin datos.</div></div>'; }
+    else{
+      const M=leagueMatrix();
+      const rows=teams.map(t=>{ const s=F[t.id]; const pts=(M.per[t.id]||[]).filter(x=>x!=null).reduce((a,b)=>a+b,0);
+        return {t,s,pts,total:s.prize+s.streak,parts:[s.prize,s.streak],
+          sub:'premios '+meur(s.prize)+' ('+s.prizeN+' jornadas) · racha '+meur(s.streak)+' ('+s.streakN+' bonos)'}; })
+        .sort((a,b)=>b.total-a.total);
+      const tot=rows.reduce((a,r)=>a+r.total,0);
+      h+='<div class="card"><h3>Ingresos que no vienen de traspasos</h3><div class="kpis" style="margin-top:10px">'+
+        '<div class="kpi"><div class="v">'+meur(tot)+'</div><div class="k">Total liga</div></div>'+
+        '<div class="kpi"><div class="v">'+meur(rows.reduce((a,r)=>a+r.s.prize,0))+'</div><div class="k">Premios</div></div>'+
+        '<div class="kpi"><div class="v">'+meur(rows.reduce((a,r)=>a+r.s.streak,0))+'</div><div class="k">Racha diaria</div></div></div>'+
+        stackRows(rows,[{label:'Premios de jornada',color:'#2b8fd6'},{label:'Racha diaria',color:'#f58220'}])+'</div>';
+      const eff=rows.filter(r=>r.pts>0&&r.s.prizeN).map(r=>({t:r.t,v:r.s.prize/r.pts})).sort((a,b)=>b.v-a.v);
+      if(eff.length) h+='<div class="card"><h3>Cuánto cobra cada uno por punto</h3><div class="note">Premios de jornada ÷ puntos. Como el bonus de posición es inverso (cobra más quien queda peor), los que puntúan poco rentabilizan cada punto.</div><div style="margin-top:8px">'+
+        barRows(eff,v=>Math.round(v/1000)+'k€')+'</div></div>';
+      const avg=rows.filter(r=>r.s.prizeN).map(r=>({t:r.t,v:r.s.prize/r.s.prizeN})).sort((a,b)=>b.v-a.v);
+      if(avg.length) h+='<div class="card"><h3>Premio medio por jornada</h3><div style="margin-top:8px">'+barRows(avg,meur,()=>'#2b8fd6')+'</div></div>';
+      const strk=rows.filter(r=>r.s.streakN).sort((a,b)=>b.s.streakN-a.s.streakN);
+      if(strk.length) h+='<div class="card"><h3>Constancia en la racha diaria</h3><div class="note">Bonos de racha cobrados (cuanto más entras seguido, más bonos).</div><div style="margin-top:8px">'+
+        barRows(strk.map(r=>({t:r.t,v:r.s.streakN})),v=>v+'×',()=>'#f58220')+'</div></div>';
+    }
+  }
+
+  if(ecMode==='rentab'){
+    const pts=teams.filter(t=>t.points!=null&&t.teamValue!=null).map(t=>({t,x:t.teamValue,y:t.points}));
+    if(pts.length>=3){
+      const sc=scatterSVG(pts,v=>(v/1e6).toFixed(0)), fit=sc.fit;
+      h+='<div class="card"><h3>¿Quién rinde por encima de su presupuesto?</h3>'+sc.svg+
+        '<div class="note" style="margin-top:8px">Cada icono es un equipo: valor de plantilla (eje horizontal) contra puntos. Por <b>encima</b> de la línea punteada rinde más de lo que vale su plantilla; por debajo, menos.'+
+        (fit?' El valor de plantilla explica el <b>'+Math.round(fit.r2*100)+'%</b> de las diferencias de puntos.':'')+'</div></div>';
+      if(fit){
+        const res=pts.map(p=>({t:p.t,v:p.y-(fit.a+fit.b*p.x)})).sort((a,b)=>b.v-a.v);
+        h+='<div class="card"><h3>Puntos por encima / debajo de lo esperado</h3><div class="note">Diferencia entre sus puntos y los que le «tocarían» por el valor de su plantilla.</div><div style="margin-top:8px">'+
+          divRows(res,v=>(v>0?'+':'')+Math.round(v))+'</div></div>';
+      }
+    }
+    const cpp=teams.filter(t=>t.points>0&&t.teamValue).map(t=>({t,v:t.teamValue/t.points})).sort((a,b)=>a.v-b.v);
+    if(cpp.length) h+='<div class="card"><h3>Coste de cada punto</h3><div class="note">Valor de plantilla por punto conseguido (menos es mejor).</div><div style="margin-top:8px">'+
+      barRows(cpp,v=>(v/1e3).toFixed(0)+'k€',()=>'#16a085')+'</div></div>';
+    const pl=teams.map(t=>{ const g=(squads[t.id]||[]).filter(p=>p.paid&&p.price);
+      const inv=g.reduce((a,p)=>a+p.paid,0), now=g.reduce((a,p)=>a+p.price,0); return {t,v:now-inv,inv,n:g.length}; }).filter(r=>r.n);
+    if(pl.length){
+      h+='<div class="card"><h3>Plusvalía latente de la plantilla</h3><div class="note">Valor actual − lo que pagó, solo en jugadores con precio de compra conocido.</div><div style="margin-top:8px">'+
+        divRows([...pl].sort((a,b)=>b.v-a.v),v=>(v>0?'+':'')+meur(v))+'</div></div>';
+      const roi=pl.filter(r=>r.inv>0).map(r=>({t:r.t,v:r.v/r.inv})).sort((a,b)=>b.v-a.v);
+      h+='<div class="card"><h3>Rentabilidad de las compras (ROI)</h3><div style="margin-top:8px">'+
+        divRows(roi,v=>(v>0?'+':'')+Math.round(v*100)+'%')+'</div></div>';
+    }
+    if(!h.replace(warn,'')) h+='<div class="card"><div class="empty">Faltan datos de plantillas o puntos.</div></div>';
+  }
+
+  w.innerHTML=h||'<div class="card"><div class="empty">Sin datos todavía.</div></div>';
+}
+
+/* ============================================================
+   ESTADISTICAS NUEVAS: mapa de calor y curiosidades
+   ============================================================ */
+function heatColor(r,N){ const t=N>1?(r-1)/(N-1):0; return 'hsl('+Math.round(140*(1-t))+',62%,'+(46+t*2)+'%)'; }
+
+function heatmapHTML(title,note,rankMap,rounds,orderIds){
+  const N=teams.length;
+  const body=orderIds.map(id=>{
+    const t=teams.find(x=>String(x.id)===String(id)); const r=rankMap[id]||[];
+    const vals=r.filter(x=>x!=null), avg=vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:null;
+    return '<div style="display:flex;align-items:center;gap:3px;margin-bottom:3px"><div style="flex:0 0 96px;font-size:.68rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap'+(isMe(id)?';font-weight:800':'')+'">'+esc(t.name)+'</div>'+
+      rounds.map((_,i)=>'<div style="flex:0 0 22px;height:22px;border-radius:4px;background:'+(r[i]==null?'#e3e7ea':heatColor(r[i],N))+';color:#fff;font-size:.6rem;font-weight:800;display:flex;align-items:center;justify-content:center;font-family:var(--mono)">'+(r[i]==null?'':r[i])+'</div>').join('')+
+      '<div style="flex:0 0 34px;text-align:right;font-size:.68rem;font-family:var(--mono);font-weight:700">'+(avg==null?'—':avg.toFixed(1).replace('.',','))+'</div></div>';
+  }).join('');
+  const head='<div style="display:flex;gap:3px;margin-bottom:4px"><div style="flex:0 0 96px"></div>'+rounds.map(l=>'<div style="flex:0 0 22px;text-align:center;font-size:.55rem;color:var(--muted)">'+esc(String(l).replace('J',''))+'</div>').join('')+'<div style="flex:0 0 34px;text-align:right;font-size:.55rem;color:var(--muted)">med</div></div>';
+  return '<div class="card"><h3>'+title+'</h3><div class="note">'+note+'</div><div style="overflow-x:auto;margin-top:10px;padding-bottom:4px">'+head+body+'</div></div>';
+}
+
+function curiosidades(opts){
+  opts=opts||{}; const pub=!!opts.pub;   // modo publico: sin ningun dato de caja
+  const out=[], add=(ic,t,x)=>out.push({ic,t,x});
+  const M=leagueMatrix(), n=M.n, rounds=M.rounds, per=M.per;
+  const nm=id=>((teams.find(t=>String(t.id)===String(id)))||{}).name||('#'+id);
+  const pn=pid=>(allPlayers[pid]||{}).name||('#'+pid);
+  const sd=a=>{ const m=a.reduce((x,y)=>x+y,0)/a.length; return Math.sqrt(a.reduce((x,y)=>x+(y-m)*(y-m),0)/a.length); };
+  const evs=loadArch().events;
+
+  if(n>=2){
+    // lider
+    const lead={}; for(let i=0;i<n;i++) teams.forEach(t=>{ if(M.rankCum[t.id][i]===1) lead[t.id]=(lead[t.id]||0)+1; });
+    const topL=Object.entries(lead).sort((a,b)=>b[1]-a[1])[0];
+    if(topL) add('👑','Líder más veces',esc(nm(topL[0]))+' ha terminado '+topL[1]+' de las '+n+' jornadas como líder de la clasificación.');
+    // mejor y peor jornada
+    let best=null,worst=null;
+    teams.forEach(t=>(per[t.id]||[]).forEach((v,i)=>{ if(v==null)return;
+      if(!best||v>best.v)best={t,v,i}; if(!worst||v<worst.v)worst={t,v,i}; }));
+    if(best) add('🚀','Mejor jornada de la temporada',esc(best.t.name)+' sacó <b>'+best.v+' puntos</b> en '+esc(rounds[best.i])+'.');
+    if(worst&&worst.v!==best.v) add('🧊','Peor jornada de la temporada',esc(worst.t.name)+' se quedó en <b>'+worst.v+' puntos</b> en '+esc(rounds[worst.i])+'.');
+    // jornada reñida / abultada
+    let tight=null,wide=null;
+    for(let i=0;i<n;i++){
+      const v=teams.map(t=>per[t.id][i]).filter(x=>x!=null).sort((a,b)=>b-a); if(v.length<2)continue;
+      const d=v[0]-v[1]; if(!tight||d<tight.d)tight={d,i}; if(!wide||d>wide.d)wide={d,i};
+    }
+    if(tight) add('🤏','Jornada más reñida',tight.d===0
+      ?'En '+esc(rounds[tight.i])+' el primero y el segundo <b>empataron a puntos</b>.'
+      :'En '+esc(rounds[tight.i])+' el primero ganó al segundo por solo <b>'+tight.d+'</b> punto'+(tight.d===1?'':'s')+'.');
+    if(wide&&wide.d>(tight?tight.d:0)) add('🥊','Paliza de jornada','En '+esc(rounds[wide.i])+' el primero sacó <b>'+wide.d+'</b> puntos al segundo.');
+    // remontadas
+    let up=null,down=null;
+    teams.forEach(t=>{ const r=M.rankCum[t.id];
+      for(let i=0;i<n;i++)for(let j=i+1;j<n;j++){ if(r[i]==null||r[j]==null)continue;
+        const g=r[i]-r[j]; if(!up||g>up.g)up={t,g,a:r[i],b:r[j],i,j}; if(!down||g<down.g)down={t,g,a:r[i],b:r[j],i,j}; }});
+    if(up&&up.g>0) add('📈','Mayor remontada',esc(up.t.name)+' pasó del <b>'+up.a+'º</b> ('+esc(rounds[up.i])+') al <b>'+up.b+'º</b> ('+esc(rounds[up.j])+').');
+    if(down&&down.g<0) add('📉','Mayor desplome',esc(down.t.name)+' cayó del <b>'+down.a+'º</b> ('+esc(rounds[down.i])+') al <b>'+down.b+'º</b> ('+esc(rounds[down.j])+').');
+    // regularidad
+    const reg=teams.map(t=>({t,v:(per[t.id]||[]).filter(x=>x!=null)})).filter(r=>r.v.length>=3).map(r=>({t:r.t,s:sd(r.v)})).sort((a,b)=>a.s-b.s);
+    if(reg.length>1){
+      add('🎯','El más regular',esc(reg[0].t.name)+' (desviación de solo '+reg[0].s.toFixed(1).replace('.',',')+' pts entre jornadas).');
+      add('🎢','El más volátil',esc(reg.at(-1).t.name)+' (desviación de '+reg.at(-1).s.toFixed(1).replace('.',',')+' pts: un día arrasa y otro se hunde).');
+    }
+    // farolillo rojo
+    const last={}; for(let i=0;i<n;i++){ const mx=Math.max(...teams.map(t=>M.rankRound[t.id][i]||0)); teams.forEach(t=>{ if(M.rankRound[t.id][i]===mx&&mx>1) last[t.id]=(last[t.id]||0)+1; }); }
+    const fl=Object.entries(last).sort((a,b)=>b[1]-a[1])[0];
+    if(fl) add('🏮','Farolillo rojo de jornada',esc(nm(fl[0]))+' ha sido el peor de la jornada en <b>'+fl[1]+'</b> ocasión'+(fl[1]===1?'':'es')+'.');
+  }
+  // distancias ahora
+  const byP=[...teams].filter(t=>t.points!=null).sort((a,b)=>b.points-a.points);
+  if(byP.length>2){
+    add('📏','Distancias en la clasificación','Entre el 1º y el 2º hay <b>'+(byP[0].points-byP[1].points)+'</b> pts; entre el 1º y el último, <b>'+(byP[0].points-byP.at(-1).points)+'</b>.');
+  }
+  // traspasos
+  const trans=[]; evs.forEach(ev=>{ if(ev.type==='transfer'||ev.type==='market') eventItems(ev).forEach(it=>{ if(it&&it.amount!=null) trans.push({it,ev}); }); });
+  if(trans.length){
+    const cara=[...trans].sort((a,b)=>b.it.amount-a.it.amount)[0], bar=[...trans].filter(x=>x.it.amount>0).sort((a,b)=>a.it.amount-b.it.amount)[0];
+    add('💸','Traspaso más caro',esc(pn(cara.it.player))+' por <b>'+meur(cara.it.amount)+'</b>'+(cara.it.to?' → '+esc(cara.it.to.name):'')+'.');
+    if(bar&&bar!==cara) add('🪙','Traspaso más barato',esc(pn(bar.it.player))+' por <b>'+meur(bar.it.amount)+'</b>'+(bar.it.to?' → '+esc(bar.it.to.name):'')+'.');
+    // pareja
+    const pairs={}; trans.forEach(({it})=>{ if(!it.from||!it.to)return; const k=[String(it.from.id),String(it.to.id)].sort().join('-');
+      pairs[k]=pairs[k]||{n:0,a:it.from.name,b:it.to.name,sum:0}; pairs[k].n++; pairs[k].sum+=it.amount; });
+    const pp=Object.values(pairs).sort((a,b)=>b.n-a.n)[0];
+    if(pp&&pp.n>1) add('🤝','La pareja que más comercia',esc(pp.a)+' y '+esc(pp.b)+': <b>'+pp.n+'</b> traspasos entre ellos'+(pub?'':' ('+meur(pp.sum)+')')+'.');
+    // horas y dias
+    const dayN=[0,0,0,0,0,0,0], DAYS=['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+    trans.forEach(({ev})=>{ dayN[new Date(ev.date*1000).getDay()]++; });
+    const dMax=dayN.indexOf(Math.max(...dayN));
+    add('📅','Día de más movimiento','El <b>'+DAYS[dMax]+'</b> concentra '+dayN[dMax]+' de los '+trans.length+' traspasos ('+Math.round(dayN[dMax]/trans.length*100)+'%).');
+  }
+  // horas de conexion (los bonos de racha se generan al entrar)
+  const logins={}; evs.forEach(ev=>{ if(ev.type!=='bonus')return; eventItems(ev).forEach(it=>{
+    if(!it||!it.user)return; const d=new Date(ev.date*1000); (logins[it.user.id]=logins[it.user.id]||[]).push(d.getHours()+d.getMinutes()/60); }); });
+  const lg=Object.entries(logins).filter(([,a])=>a.length>=3).map(([id,a])=>{ const s=[...a].sort((x,y)=>x-y); return {id,h:s[Math.floor(s.length/2)],n:a.length}; }).sort((a,b)=>a.h-b.h);
+  const hh=h=>Math.floor(h)+':'+String(Math.round((h%1)*60)).padStart(2,'0');
+  if(lg.length>1&&(!pub||opts.logins)){
+    add('🌅','El madrugador',esc(nm(lg[0].id))+' suele entrar sobre las <b>'+hh(lg[0].h)+'</b> (mediana de '+lg[0].n+' conexiones con racha).');
+    add('🦉','El noctámbulo',esc(nm(lg.at(-1).id))+' suele entrar sobre las <b>'+hh(lg.at(-1).h)+'</b>.');
+  }
+  // racha y blindajes
+  if(ET&&!pub){   // todo lo de aqui es economia privada: nunca en el informe publico
+    const F=ET.final, rows=teams.map(t=>({t,s:F[t.id]})).filter(r=>r.s);
+    const st=[...rows].sort((a,b)=>b.s.streakN-a.s.streakN)[0];
+    if(st&&st.s.streakN) add('🔥','El más constante','<b>'+esc(st.t.name)+'</b> ha cobrado '+st.s.streakN+' bonos de racha diaria ('+meur(st.s.streak)+').');
+    const bl=[...rows].sort((a,b)=>b.s.claus-a.s.claus)[0];
+    if(bl&&bl.s.claus) add('🛡️','El más blindado',esc(bl.t.name)+' ha gastado <b>'+meur(bl.s.claus)+'</b> en subir cláusulas ('+bl.s.clausN+' subidas).');
+    const bc=[...rows].sort((a,b)=>b.s.maxClaus.amount-a.s.maxClaus.amount)[0];
+    if(bc&&bc.s.maxClaus.amount) add('🔒','Blindaje más caro',esc(pn(bc.s.maxClaus.player))+' de '+esc(bc.t.name)+': <b>'+meur(bc.s.maxClaus.amount)+'</b> de una sola vez.');
+    const ng=rows.filter(r=>r.s.bal<0);
+    if(ng.length) add('🚨','En números rojos',ng.map(r=>esc(r.t.name)+' ('+meur(r.s.bal)+')').join(', ')+'.');
+  }
+  // plantillas
+  const avgV=teams.filter(t=>t.teamValue&&t.teamSize).map(t=>({t,v:t.teamValue/t.teamSize})).sort((a,b)=>b.v-a.v);
+  if(avgV.length>1) add('💎','Plantilla más cara por cabeza',esc(avgV[0].t.name)+': <b>'+meur(avgV[0].v)+'</b> de media por jugador (el menos, '+esc(avgV.at(-1).t.name)+' con '+meur(avgV.at(-1).v)+').');
+  return out;
+}
+
+function renderMapa(){
+  const M=leagueMatrix(); if(!M.n) return '<div class="card"><div class="empty">Aún no hay jornadas archivadas.</div></div>';
+  const order=[...teams].sort((a,b)=>(b.points||0)-(a.points||0)).map(t=>t.id);
+  let h=heatmapHTML('Posición en la clasificación tras cada jornada','1 = líder. Verde cerca de la cabeza, rojo cerca del farolillo.',M.rankCum,M.rounds,order);
+  h+=heatmapHTML('Puesto de cada jornada (por puntos)','Cómo quedó cada equipo en esa jornada concreta, sin arrastrar lo anterior.',M.rankRound,M.rounds,order);
+  // forma reciente
+  const form=teams.map(t=>{ const v=(M.per[t.id]||[]).filter(x=>x!=null); if(v.length<4)return null;
+    const k=3, rec=v.slice(-k).reduce((a,b)=>a+b,0)/k, all=v.reduce((a,b)=>a+b,0)/v.length; return {t,v:rec-all,rec,all}; }).filter(Boolean).sort((a,b)=>b.v-a.v);
+  if(form.length) h+='<div class="card"><h3>Quién está en racha</h3><div class="note">Media de las últimas 3 jornadas menos su media de temporada. Verde: mejorando; rojo: se apaga.</div><div style="margin-top:8px">'+
+    divRows(form,v=>(v>0?'+':'')+v.toFixed(1).replace('.',','))+'</div></div>';
+  // rachas por encima de la media
+  const streaks=teams.map(t=>{ let best=0,cur=0; for(let i=0;i<M.n;i++){
+      const vals=teams.map(x=>M.per[x.id][i]).filter(x=>x!=null), m=vals.reduce((a,b)=>a+b,0)/Math.max(1,vals.length), v=M.per[t.id][i];
+      if(v!=null&&v>m){cur++;best=Math.max(best,cur)}else cur=0; } return {t,v:best}; }).sort((a,b)=>b.v-a.v);
+  h+='<div class="card"><h3>Más jornadas seguidas por encima de la media</h3><div style="margin-top:8px">'+barRows(streaks,v=>v+' j.',()=>'#2fa84f')+'</div></div>';
+  return h;
+}
+
+function renderCuriosidades(){
+  const L=curiosidades();
+  if(!L.length) return '<div class="card"><div class="empty">Aún no hay datos suficientes para sacar curiosidades.<br>Archiva el histórico en Ajustes.</div></div>';
+  return L.map(c=>'<div class="card" style="display:flex;gap:12px;align-items:flex-start"><div style="font-size:1.5rem;line-height:1">'+c.ic+'</div>'+
+    '<div style="min-width:0"><div style="font-size:.66rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:700">'+c.t+'</div>'+
+    '<div style="font-size:.85rem;line-height:1.45;margin-top:3px">'+c.x+'</div></div></div>').join('');
+}
+
+
+$('bEcon').onclick=()=>loadEconomia();
+
+/* ============================================================
+   INFORME PUBLICO PARA LA LIGA
+   Una pagina estatica (sin JavaScript) que se publica en tu Worker y se
+   comparte con el resto de la liga.
+
+   PRIVACIDAD, por construccion y con doble comprobacion:
+   1) El informe se pinta SOLO desde el objeto R que fabrica
+      buildReportData(), y ese objeto solo recibe campos de una lista
+      blanca: puntos, posiciones, valor de plantilla, traspasos que ya
+      salen en el tablon de la liga y curiosidades deportivas. Nada de
+      caja, techo, gastos, ingresos acumulados, premios, racha en euros,
+      blindajes ni patrimonio.
+   2) auditReport() revisa el resultado ANTES de publicar: nombres de
+      clave prohibidos, palabras prohibidas en el texto y, sobre todo, que
+      ninguna cifra exacta de la caja reconstruida de ningun equipo
+      aparezca en la pagina. Si salta algo, NO se publica.
+   ============================================================ */
+const REP_FORBIDDEN_KEY=/^(bal|balance|balances|saldo|cash|caja|ceil|ceiling|techo|spent|gasto|earned|ingreso|income|prize|premio|streak|claus|patrimonio|treasury|tesoreria|maxbid)/i;
+const REP_FORBIDDEN_TEXT=/saldo|\bcaja\b|\btecho\b|tesorer|patrimonio|descubierto|n[uú]meros rojos|blindaj|blindad|cl[aá]usula|racha diaria|bonos? de racha|presupuesto|en rojo/i;
+const REP_DEFAULT={title:'Los Zagalicos · Informe de liga',id:'',key:'',auto:false,lastPub:0,lastHash:'',lastErr:'',
+  sec:{tabla:1,valor:1,evol:1,mapa:1,pred:1,forma:1,clubes:1,fichajes:1,curio:1,logins:0}};
+const REP_SECTIONS=[
+  ['tabla','Clasificación'],
+  ['valor','Valor de plantilla en la clasificación'],
+  ['evol','Evolución de puntos y posiciones'],
+  ['mapa','Mapa de calor de posiciones'],
+  ['pred','Predicción de campeón'],
+  ['forma','Quién está en racha (puntos)'],
+  ['clubes','Jornadas ganadas y mejor jornada'],
+  ['fichajes','Traspasos: los más caros y los últimos'],
+  ['curio','Curiosidades'],
+  ['logins','Curiosidad de horarios de conexión (apagado por defecto)']
+];
+function repCfg(){
+  // Siempre el MISMO objeto (cfg.report): quien lo guarde en una variable lo ve actualizado.
+  const r=cfg.report||(cfg.report={});
+  Object.keys(REP_DEFAULT).forEach(k=>{ if(k!=='sec'&&r[k]===undefined) r[k]=REP_DEFAULT[k]; });
+  r.sec=Object.assign({},REP_DEFAULT.sec,r.sec||{});
+  if(!/^[a-f0-9]{32}$/.test(r.id||'')) r.id=rndHex(16);
+  return r;
+}
+function rndHex(nb){
+  const a=new Uint8Array(nb); crypto.getRandomValues(a);
+  return Array.from(a).map(x=>x.toString(16).padStart(2,'0')).join('');
+}
+const repUrl=()=>cfg.workerUrl?(cfg.workerUrl.replace(/\/$/,'')+'/zag/report/'+repCfg().id):'';
+const djb2=s=>{ let h=5381; for(let i=0;i<s.length;i++) h=((h<<5)+h+s.charCodeAt(i))|0; return (h>>>0).toString(36)+'-'+s.length; };
+
+// Los colores de equipo del informe NO distinguen a nadie ("tu" linea): es de todos.
+function repColor(id){
+  const ids=teams.map(t=>String(t.id)).sort(); const i=ids.indexOf(String(id));
+  return TEAM_PALETTE[(i<0?0:i)%TEAM_PALETTE.length];
+}
+const repPct=x=>(x*100).toFixed(x>=0.1?0:1).replace('.',',')+'%';
+const repNum=(v,d)=>v==null||!isFinite(v)?'—':v.toFixed(d==null?1:d).replace('.',',');
+
+/* ---------- 1. DATOS (lista blanca) ---------- */
+function buildReportData(rc){
+  const M=leagueMatrix(), n=M.n;
+  if(!n) throw new Error('Aún no hay jornadas archivadas. Ve a Ajustes → «Archivar histórico completo».');
+  const V={}; ligaViews().forEach(v=>{ if(['cum','rank','avg','lead'].includes(v.k)) V[v.k]=v.compute(); });
+  const byP=[...teams].sort((a,b)=>(b.points||0)-(a.points||0));
+  const lead=byP.length?(byP[0].points||0):0;
+  const R={title:String(rc.title||REP_DEFAULT.title).slice(0,80),nRounds:n,rounds:M.rounds,sec:Object.assign({},rc.sec),
+    seasonRounds:SEASON_ROUNDS};
+  R.teams=byP.map((t,i)=>{
+    const v=(M.per[t.id]||[]).filter(x=>x!=null);
+    return {id:t.id,name:t.name,icon:t.icon||'',rank:i+1,points:t.points||0,gap:lead-(t.points||0),
+      valorPlantilla:t.teamValue||null,jugadores:t.teamSize||null,
+      ultima:v.length?v[v.length-1]:null,media:v.length?v.reduce((a,b)=>a+b,0)/v.length:null,
+      puntosDeSalida:M.offsets[t.id]||0};
+  });
+  R.charts={cum:{labels:V.cum.labels,series:V.cum.series},
+            rank:{labels:V.rank.labels,series:V.rank.series},
+            vsmedia:{labels:V.avg.labels,series:V.avg.series},
+            allider:{labels:V.lead.labels,series:V.lead.series}};
+  R.heat={rankCum:M.rankCum,rankRound:M.rankRound};
+  // prediccion
+  // Simulacion con semilla fija (rondas + puntos): mismos datos -> mismos porcentajes.
+  // Sin esto cada generacion cambiaba por azar y la publicacion automatica siempre veia "cambios".
+  let seed=(n*7919+teams.reduce((a,t)=>a+(t.points||0)*31,0))>>>0;
+  const _rnd=Math.random;
+  Math.random=()=>{ seed=(seed+0x6D2B79F5)>>>0; let t=seed; t=Math.imul(t^(t>>>15),t|1); t^=t+Math.imul(t^(t>>>7),t|61); return ((t^(t>>>14))>>>0)/4294967296; };
+  let S; try{ S=simulateSeason(4000); } finally{ Math.random=_rnd; }
+  if(S){
+    const top=(key,pk,prj,k)=>[...teams].sort((a,b)=>S.res[b.id][key]-S.res[a.id][key]||S.res[b.id][prj]-S.res[a.id][prj]).slice(0,k)
+      .map(t=>({id:t.id,name:t.name,icon:t.icon||'',champ:S.res[t.id][key],podium:S.res[t.id][pk],proj:S.res[t.id][prj]}));
+    R.pred={end:top('champEnd','podiumEnd','projEnd',6),winter:top('champWinter','podiumWinter','projWinter',5),
+      played:S.played,toWinter:S.toWinter,toEnd:S.toEnd,lambda:S.model.lambda,sd:S.sd};
+  }
+  // forma
+  R.forma=teams.map(t=>{ const v=(M.per[t.id]||[]).filter(x=>x!=null); if(v.length<4)return null;
+      const rec=v.slice(-3).reduce((a,b)=>a+b,0)/3, all=v.reduce((a,b)=>a+b,0)/v.length;
+      return {id:t.id,name:t.name,dif:rec-all,rec,media:all}; }).filter(Boolean).sort((a,b)=>b.dif-a.dif);
+  R.rachas=teams.map(t=>{ let best=0,cur=0; for(let i=0;i<n;i++){
+      const vals=teams.map(x=>M.per[x.id][i]).filter(x=>x!=null), m=vals.reduce((a,b)=>a+b,0)/Math.max(1,vals.length), v=M.per[t.id][i];
+      if(v!=null&&v>m){cur++;best=Math.max(best,cur)}else cur=0; } return {id:t.id,name:t.name,seguidas:best}; })
+    .sort((a,b)=>b.seguidas-a.seguidas);
+  // jornadas ganadas
+  const CS=clubStats();
+  R.clubes=teams.map(t=>({id:t.id,name:t.name,ganadas:CS.out[t.id].wins,mejor:CS.out[t.id].max,media:CS.out[t.id].avg,jugadas:CS.out[t.id].n}))
+    .sort((a,b)=>b.ganadas-a.ganadas||b.media-a.media);
+  // traspasos publicos del tablon (los ve toda la liga). Sin sumas por equipo.
+  const all=loadArch().events;
+  const reset=all.filter(e=>e.type==='leagueReset').reduce((m,e)=>Math.max(m,e.date),0);
+  const tr=[]; all.forEach(ev=>{ if(ev.date<reset)return;
+    if(ev.type==='transfer'||ev.type==='market') eventItems(ev).forEach(it=>{
+      if(it&&it.amount!=null&&it.player!=null) tr.push({fecha:ev.date,jugador:(allPlayers[it.player]||{}).name||('#'+it.player),
+        posicion:(allPlayers[it.player]||{}).position||0,de:it.from?it.from.name:'Mercado',a:it.to?it.to.name:'',importe:it.amount}); }); });
+  R.fichajes={total:tr.length,
+    masCaros:[...tr].sort((a,b)=>b.importe-a.importe).slice(0,5),
+    ultimos:[...tr].sort((a,b)=>b.fecha-a.fecha).slice(0,10)};
+  R.curio=curiosidades({pub:true,logins:!!rc.sec.logins});
+  return R;
+}
+
+/* ---------- 2. PIEZAS ESTATICAS ---------- */
+function repLine(D,o){
+  o=o||{};
+  const n=D.labels.length, k=(o.last&&o.last<n)?o.last:n, i0=n-k, rank=!!o.rank;
+  const tl=teams.filter(t=>D.series[t.id]);
+  const lastOf=t=>{ const a=D.series[t.id]; for(let i=a.length-1;i>=0;i--) if(a[i]!=null) return a[i]; return null; };
+  tl.sort(rank?((a,b)=>(lastOf(a)??1e9)-(lastOf(b)??1e9)):((a,b)=>(lastOf(b)??-1e18)-(lastOf(a)??-1e18)));
+  let lo=Infinity,hi=-Infinity;
+  tl.forEach(t=>{ for(let i=i0;i<n;i++){ const v=D.series[t.id][i]; if(v!=null){ if(v<lo)lo=v; if(v>hi)hi=v; } } });
+  if(!isFinite(lo)) return '<p class="mut">Sin datos todavía.</p>';
+  if(rank){ lo=0.5; hi=Math.max(teams.length,hi)+0.5; }
+  else{ const pad=(hi-lo)*0.07||1; lo-=pad; hi+=pad; if(o.nonneg&&lo<0) lo=0; }
+  const W=360,H=300,padL=34,padR=30,padT=12,padB=22, iw=W-padL-padR, ih=H-padT-padB;
+  const xAt=i=>padL+(k<=1?iw/2:((i-i0)/(k-1))*iw);
+  const yAt=v=>rank?padT+((v-lo)/(hi-lo))*ih:padT+ih-((v-lo)/(hi-lo))*ih;
+  const fmt=o.fmt||(v=>String(Math.round(v)));
+  let s='<svg viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="'+esc(o.alt||'Gráfica')+'" style="width:100%;height:auto;display:block">';
+  const ticks=rank?Array.from({length:teams.length},(_,i)=>i+1).filter((_,i,a)=>a.length<=7||i%2===0||i===a.length-1):niceTicks(lo,hi,4);
+  ticks.forEach(v=>{ const y=yAt(v);
+    s+='<line x1="'+padL+'" y1="'+y.toFixed(1)+'" x2="'+(W-padR)+'" y2="'+y.toFixed(1)+'" stroke="#e7eaed"/>'+
+       '<text x="'+(padL-5)+'" y="'+(y+3).toFixed(1)+'" font-size="8" text-anchor="end" fill="#8a97a0">'+esc(rank?v:fmt(v))+'</text>'; });
+  if(!rank&&lo<0&&hi>0) s+='<line x1="'+padL+'" y1="'+yAt(0).toFixed(1)+'" x2="'+(W-padR)+'" y2="'+yAt(0).toFixed(1)+'" stroke="#b9c2c8" stroke-width="1.2"/>';
+  const stepL=Math.max(1,Math.ceil(k/8));
+  for(let i=i0;i<n;i++){
+    if(i!==n-1&&(((i-i0)%stepL!==0)||(n-1-i)<stepL*0.7)) continue;
+    s+='<text x="'+xAt(i).toFixed(1)+'" y="'+(H-6)+'" font-size="8" text-anchor="middle" fill="#8a97a0">'+esc(D.labels[i])+'</text>';
+  }
+  tl.slice().reverse().forEach(t=>{
+    const a=D.series[t.id]; let d='',pen=false;
+    for(let i=i0;i<n;i++){ if(a[i]==null){pen=false;continue}
+      d+=(pen?'L':'M')+xAt(i).toFixed(1)+','+yAt(a[i]).toFixed(1); pen=true; }
+    s+='<path d="'+d+'" fill="none" stroke="'+repColor(t.id)+'" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round" opacity=".9"/>';
+    if(k<=8) for(let i=i0;i<n;i++){ if(a[i]==null)continue;
+      s+='<circle cx="'+xAt(i).toFixed(1)+'" cy="'+yAt(a[i]).toFixed(1)+'" r="1.5" fill="'+repColor(t.id)+'"/>'; }
+  });
+  const R_=5.4, gap=2*R_+1.4;
+  const mk=tl.map(t=>{ const a=D.series[t.id]; let li=-1; for(let i=n-1;i>=i0;i--) if(a[i]!=null){li=i;break}
+    if(li<0)return null; const cy=yAt(a[li]); return {t,cx:xAt(li),cy,dy:cy}; }).filter(Boolean).sort((a,b)=>a.cy-b.cy);
+  for(let i=1;i<mk.length;i++) if(mk[i].dy<mk[i-1].dy+gap) mk[i].dy=mk[i-1].dy+gap;
+  const bottom=H-padB+6, over=mk.length?mk[mk.length-1].dy-bottom:0;
+  if(over>0){ mk.forEach(m=>m.dy-=over); for(let i=mk.length-2;i>=0;i--) if(mk[i].dy>mk[i+1].dy-gap) mk[i].dy=mk[i+1].dy-gap; }
+  mk.forEach(m=>{
+    const t=m.t, col=repColor(t.id), cx=m.cx, cy=m.dy, img=IMG_USER(t.icon), cid=(o.id||'c')+'-'+t.id;
+    if(Math.abs(m.dy-m.cy)>1.5) s+='<line x1="'+m.cx.toFixed(1)+'" y1="'+m.cy.toFixed(1)+'" x2="'+cx.toFixed(1)+'" y2="'+cy.toFixed(1)+'" stroke="'+col+'" stroke-width=".8"/>';
+    if(img) s+='<clipPath id="'+cid+'"><circle cx="'+cx.toFixed(1)+'" cy="'+cy.toFixed(1)+'" r="'+R_+'"/></clipPath>'+
+      '<circle cx="'+cx.toFixed(1)+'" cy="'+cy.toFixed(1)+'" r="'+(R_+1.5)+'" fill="#fff" stroke="'+col+'" stroke-width="1.5"/>'+
+      '<image href="'+esc(img)+'" x="'+(cx-R_).toFixed(1)+'" y="'+(cy-R_).toFixed(1)+'" width="'+(R_*2)+'" height="'+(R_*2)+'" clip-path="url(#'+cid+')" preserveAspectRatio="xMidYMid slice"/>';
+    else s+='<circle cx="'+cx.toFixed(1)+'" cy="'+cy.toFixed(1)+'" r="'+R_+'" fill="'+col+'"/>'+
+      '<text x="'+cx.toFixed(1)+'" y="'+(cy+2).toFixed(1)+'" font-size="5" text-anchor="middle" fill="#fff" font-weight="700">'+esc(initials(t.name))+'</text>';
+  });
+  s+='</svg>';
+  s+='<div class="lg">'+tl.map(t=>{ const v=lastOf(t);
+    return '<span><i style="background:'+repColor(t.id)+'"></i><em>'+esc(t.name)+'</em><b>'+(v==null?'—':esc(fmt(v)))+'</b></span>'; }).join('')+'</div>';
+  return s;
+}
+
+function repHeat(rankMap,rounds,order){
+  const N=teams.length;
+  const head='<div class="hr"><div class="hn"></div>'+rounds.map(l=>'<div class="hc hh">'+esc(String(l).replace('J',''))+'</div>').join('')+'<div class="hm hh">med</div></div>';
+  const body=order.map(id=>{
+    const t=teams.find(x=>String(x.id)===String(id)); const r=rankMap[id]||[];
+    const vals=r.filter(x=>x!=null), avg=vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:null;
+    return '<div class="hr"><div class="hn">'+esc(t.name)+'</div>'+
+      rounds.map((_,i)=>'<div class="hc" style="background:'+(r[i]==null?'#e3e7ea':heatColor(r[i],N))+'">'+(r[i]==null?'':r[i])+'</div>').join('')+
+      '<div class="hm">'+(avg==null?'—':repNum(avg))+'</div></div>';
+  }).join('');
+  return '<div class="scroll">'+head+body+'</div>';
+}
+
+function repFace(icon,name,sz){
+  sz=sz||26;
+  return icon?'<img class="fc" style="width:'+sz+'px;height:'+sz+'px" src="'+esc(IMG_USER(icon))+'" alt="" loading="lazy">'
+             :'<span class="fc" style="width:'+sz+'px;height:'+sz+'px;line-height:'+sz+'px">'+esc(initials(name))+'</span>';
+}
+
+/* ---------- 3. HTML FINAL ---------- */
+function renderReportHTML(R){
+  const S=R.sec, POSN={1:'PT',2:'DF',3:'MC',4:'DL'};
+  const card=(h,b,id)=>'<section class="card"'+(id?' id="'+id+'"':'')+'><h2>'+h+'</h2>'+b+'</section>';
+  const bar=(items,fmt,col)=>{ const mx=Math.max(1e-9,...items.map(i=>Math.abs(i.v)));
+    return items.map(i=>'<div class="br"><span class="bn">'+esc(i.name)+'</span><span class="bt"><i style="width:'+Math.max(2,Math.abs(i.v)/mx*100)+'%;background:'+(col?col(i.v):'#e2333f')+'"></i></span><b>'+fmt(i.v)+'</b></div>').join(''); };
+  let h='';
+
+  if(S.tabla){
+    h+=card('Clasificación','<div class="tbl">'+
+      '<div class="tr th"><span class="c1">#</span><span class="c2">Equipo</span><span class="c3">Pts</span><span class="c4">Dif.</span></div>'+
+      R.teams.map(t=>'<div class="tr"><span class="c1">'+t.rank+'</span><span class="c2">'+repFace(t.icon,t.name,28)+
+        '<span class="w"><span class="nm">'+esc(t.name)+'</span><span class="sb">Últ. '+(t.ultima==null?'—':t.ultima)+' · Media '+repNum(t.media)+
+        (S.valor&&t.valorPlantilla?' · '+meur(t.valorPlantilla):'')+'</span></span></span>'+
+        '<span class="c3"><b>'+t.points+'</b></span><span class="c4">'+(t.gap?'−'+t.gap:'—')+'</span></div>').join('')+'</div>'+
+      '<p class="mut">Tras '+R.nRounds+' jornada'+(R.nRounds===1?'':'s')+' de '+R.seasonRounds+'. Bajo cada equipo: puntos de la última jornada, media por jornada'+(S.valor?' y valor de plantilla':'')+'.'+
+      (R.teams.some(t=>t.puntosDeSalida)?' Quien entró más tarde en la liga arranca con puntos de salida.':'')+'</p>');
+  }
+  if(S.evol){
+    h+=card('Evolución de puntos','<p class="mut">Puntos acumulados tras cada jornada.</p>'+repLine(R.charts.cum,{id:'g1',nonneg:true,alt:'Puntos acumulados por jornada'}));
+    h+=card('Posición en la clasificación','<p class="mut">1 es la cabeza. Líneas que suben = equipos que escalan.</p>'+repLine(R.charts.rank,{id:'g2',rank:true,fmt:v=>v+'º',alt:'Posición por jornada'}));
+    h+=card('Distancia a la media','<p class="mut">Puntos por encima o por debajo de la media de la liga: separa las líneas que van pegadas.</p>'+
+      repLine(R.charts.vsmedia,{id:'g3',fmt:v=>(v>0?'+':'')+Math.round(v),alt:'Diferencia con la media de la liga'}));
+    if(R.nRounds>6) h+=card('Al líder, últimas 6 jornadas','<p class="mut">Cuánto le falta a cada uno para el primero, solo el tramo reciente.</p>'+
+      repLine(R.charts.allider,{id:'g4',last:6,fmt:v=>Math.round(v)+'',alt:'Distancia al líder en las últimas jornadas'}));
+  }
+  if(S.mapa){
+    const order=R.teams.map(t=>t.id);
+    h+=card('Mapa de posiciones','<p class="mut">Puesto en la clasificación tras cada jornada. Verde cerca de la cabeza, rojo cerca del farolillo.</p>'+repHeat(R.heat.rankCum,R.rounds,order));
+    h+=card('Puesto en cada jornada','<p class="mut">Cómo quedó cada equipo en esa jornada concreta, sin arrastrar lo anterior.</p>'+repHeat(R.heat.rankRound,R.rounds,order));
+  }
+  if(S.pred&&R.pred){
+    const row=p=>'<div class="pr">'+repFace(p.icon,p.name,24)+'<div class="pm"><div class="nm">'+esc(p.name)+'</div><div class="pb"><i style="width:'+Math.round(p.champ*100)+'%"></i></div></div>'+
+      '<div class="pv"><b>'+repPct(p.champ)+'</b><span>'+Math.round(p.proj)+' pts</span></div></div>';
+    h+=card('Campeón de invierno (J19)',R.pred.winter.map(row).join('')+'<p class="mut">Quedan '+R.pred.toWinter+' jornadas para cerrar la primera vuelta.</p>');
+    h+=card('Campeón de liga (J'+R.seasonRounds+')',R.pred.end.map(row).join('')+
+      '<p class="mut">Estimación estadística (4.000 temporadas simuladas mezclando la media de cada equipo con el valor de su plantilla), no una promesa: con '+
+      R.pred.played+' jornada'+(R.pred.played===1?'':'s')+' jugadas hay más ruido que nivel. Ruido semanal ≈ ±'+Math.round(R.pred.sd)+' pts.</p>');
+  }
+  if(S.forma&&R.forma.length){
+    h+=card('Quién está en racha','<p class="mut">Media de las últimas 3 jornadas menos su media de temporada. Verde: mejorando. Rojo: se apaga.</p>'+
+      bar(R.forma.map(f=>({name:f.name,v:f.dif})),v=>(v>0?'+':'')+repNum(v),v=>v>=0?'#2fa84f':'#e2333f'));
+    h+=card('Jornadas seguidas por encima de la media',bar(R.rachas.map(f=>({name:f.name,v:f.seguidas})),v=>v+' j.',()=>'#2fa84f'));
+  }
+  if(S.clubes){
+    h+=card('Jornadas ganadas',
+      bar(R.clubes.map(c=>({name:c.name,v:c.ganadas})),v=>String(v),()=>'#e8a51c')+
+      '<div class="sp"></div><h3>Mejor jornada de cada equipo</h3>'+
+      bar([...R.clubes].sort((a,b)=>b.mejor-a.mejor).map(c=>({name:c.name,v:c.mejor})),v=>v+' pts',()=>'#2b8fd6'));
+  }
+  if(S.fichajes&&R.fichajes.total){
+    const line=f=>'<div class="fr"><span class="fp p'+f.posicion+'">'+(POSN[f.posicion]||'?')+'</span><div class="fm"><b>'+esc(f.jugador)+'</b>'+
+      '<span class="mut">'+esc(f.de)+(f.a?' → '+esc(f.a):'')+' · '+new Date(f.fecha*1000).toLocaleDateString('es-ES',{day:'2-digit',month:'2-digit'})+'</span></div><b class="fe">'+meur(f.importe)+'</b></div>';
+    h+=card('Los traspasos más caros',R.fichajes.masCaros.map(line).join(''));
+    h+=card('Últimos movimientos',R.fichajes.ultimos.map(line).join('')+'<p class="mut">Solo operaciones que ya son públicas en el tablón de la liga.</p>');
+  }
+  if(S.curio&&R.curio.length){
+    h+=card('Curiosidades',R.curio.map(c=>'<div class="cu"><div class="ci">'+c.ic+'</div><div><div class="ct">'+esc(c.t)+'</div><div class="cx">'+c.x+'</div></div></div>').join(''));
+  }
+
+  const css=':root{--ink:#14181b;--muted:#6b7780;--line:#e4e8eb;--bg:#f2f4f5;--red:#e2333f}'+
+    '*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}'+
+    'header{background:#14181b;color:#fff;padding:22px 16px 18px}header .in,main{max-width:680px;margin:0 auto}'+
+    'header small{display:block;letter-spacing:.14em;text-transform:uppercase;font-size:.68rem;color:#9aa6ad;font-weight:700}'+
+    'header h1{margin:6px 0 4px;font-size:1.45rem;line-height:1.15}header h1 em{color:var(--red);font-style:normal}'+
+    'header p{margin:0;color:#b7c2c8;font-size:.8rem}main{padding:14px 12px 28px}'+
+    '.card{background:#fff;border-radius:12px;padding:14px;margin-bottom:12px;box-shadow:0 1px 3px rgba(20,24,27,.07)}'+
+    '.card h2{font-size:.95rem;margin:0 0 8px}.card h3{font-size:.82rem;margin:4px 0 6px}.mut{color:var(--muted);font-size:.74rem;margin:6px 0 0}'+
+    '.sp{height:12px}.fc{border-radius:50%;background:#e8ebed;object-fit:cover;flex:none;display:inline-block;text-align:center;font-size:.55rem;font-weight:700;color:var(--muted);vertical-align:middle}'+
+    '.tr{display:flex;align-items:center;gap:6px;padding:7px 0;border-bottom:1px solid var(--line);font-size:.8rem}.tr:last-child{border:none}'+
+    '.th{font-size:.62rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:700;padding-top:0}'+
+    '.c1{flex:0 0 22px;text-align:center;color:var(--muted);font-weight:800}.c2{flex:1;min-width:0;display:flex;align-items:center;gap:7px}'+
+    '.w{display:flex;flex-direction:column;min-width:0}.nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}.sb{font-size:.68rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.c3,.c4{flex:0 0 42px;text-align:right;font-variant-numeric:tabular-nums}.c4{color:var(--muted)}'+
+    '.lg{display:grid;grid-template-columns:1fr 1fr;gap:3px 12px;margin-top:8px;font-size:.72rem}.lg span{display:flex;align-items:center;gap:5px;min-width:0}'+
+    '.lg i{width:8px;height:8px;border-radius:50%;flex:none}.lg em{font-style:normal;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.lg b{flex:none;font-variant-numeric:tabular-nums}'+
+    '.scroll{overflow-x:auto;padding-bottom:4px}.hr{display:flex;align-items:center;gap:3px;margin-bottom:3px;width:max-content;min-width:100%}'+
+    '.hn{flex:0 0 96px;font-size:.68rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.hc{flex:0 0 22px;height:22px;border-radius:4px;color:#fff;font-size:.6rem;font-weight:800;display:flex;align-items:center;justify-content:center}'+
+    '.hc.hh{background:none;color:var(--muted);font-weight:600;height:auto;font-size:.55rem}.hm{flex:0 0 34px;text-align:right;font-size:.68rem;font-weight:700}.hm.hh{color:var(--muted);font-size:.55rem;font-weight:600}'+
+    '.pr{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--line)}.pr:last-of-type{border:none}.pm{flex:1;min-width:0}.pb{height:6px;background:#eceff1;border-radius:3px;margin-top:4px;overflow:hidden}.pb i{display:block;height:100%;background:var(--red)}'+
+    '.pv{text-align:right;flex:none}.pv b{display:block}.pv span{font-size:.66rem;color:var(--muted)}'+
+    '.br{display:flex;align-items:center;gap:8px;padding:4px 0}.bn{flex:0 0 108px;font-size:.74rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.bt{flex:1;height:12px;background:#eceff1;border-radius:3px;overflow:hidden}.bt i{display:block;height:100%;border-radius:3px}.br b{flex:0 0 48px;text-align:right;font-size:.74rem;font-variant-numeric:tabular-nums}'+
+    '.fr{display:flex;align-items:center;gap:9px;padding:7px 0;border-bottom:1px solid var(--line)}.fr:last-of-type{border:none}.fm{flex:1;min-width:0;display:flex;flex-direction:column;font-size:.82rem}.fe{font-size:.82rem;flex:none}'+
+    '.fp{flex:none;width:22px;height:22px;line-height:22px;border-radius:50%;text-align:center;color:#fff;font-size:.56rem;font-weight:800;background:#b9c2c8}.fp.p1{background:#e8a51c}.fp.p2{background:#2b8fd6}.fp.p3{background:#2fa84f}.fp.p4{background:#e2333f}'+
+    '.cu{display:flex;gap:12px;padding:9px 0;border-bottom:1px solid var(--line)}.cu:last-child{border:none}.ci{font-size:1.4rem;line-height:1}.ct{font-size:.64rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:700}.cx{font-size:.84rem;margin-top:2px}'+
+    'footer{text-align:center;color:var(--muted);font-size:.7rem;padding:4px 16px 26px}';
+
+  return '<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'+
+    '<meta name="robots" content="noindex,nofollow"><meta name="referrer" content="no-referrer">'+
+    '<title>'+esc(R.title)+'</title><style>'+css+'</style></head><body>'+
+    '<header><div class="in"><small>Informe de liga</small><h1>'+esc(R.title)+'</h1>'+
+    '<p>Actualizado el @@GEN@@ · '+R.nRounds+' jornada'+(R.nRounds===1?'':'s')+' jugadas</p></div></header>'+
+    '<main>'+h+'</main><footer>Informe generado automáticamente con los puntos, posiciones y traspasos públicos de la liga.</footer></body></html>';
+}
+
+/* ---------- 4. AUDITORIA DE PRIVACIDAD ---------- */
+function auditReport(R,html){
+  const bad=[];
+  const walk=(o,path)=>{ if(o&&typeof o==='object') Object.keys(o).forEach(k=>{
+    if(!/^\d+$/.test(k)&&REP_FORBIDDEN_KEY.test(k)) bad.push('campo prohibido «'+path+k+'»');
+    walk(o[k],path+k+'.'); }); };
+  walk(R,'');
+  // texto visible: se quitan nombres (un equipo puede llamarse «Caja Rural FC») y direcciones
+  const names=new Set(); const grab=o=>{ if(Array.isArray(o)) o.forEach(grab); else if(o&&typeof o==='object'){
+    ['name','jugador','de','a'].forEach(k=>{ if(typeof o[k]==='string'&&o[k].length>1) names.add(o[k]); }); Object.values(o).forEach(grab); } };
+  grab(R); teams.forEach(t=>names.add(String(t.name)));
+  let txt=html.replace(/(href|src)="[^"]*"/g,'$1=""').replace(/<style>[\s\S]*?<\/style>/,'');
+  [...names].sort((a,b)=>b.length-a.length).forEach(n=>{ txt=txt.split(esc(n)).join('·'); });
+  const m=txt.match(REP_FORBIDDEN_TEXT); if(m) bad.push('texto prohibido «'+m[0]+'»');
+  if(/<script/i.test(html)) bad.push('el informe no puede llevar scripts');
+  // cifras exactas de la caja reconstruida de cada equipo (incluida la tuya)
+  const secrets=[]; teams.forEach(t=>{ if(balances[t.id]!=null) secrets.push(balances[t.id]); });
+  try{ const E=econTimeline(); if(E) teams.forEach(t=>{ const s=E.final[t.id]; if(s) secrets.push(s.bal); }); }catch(e){}
+  const seen=new Set();
+  secrets.forEach(v=>{ const a=Math.abs(Math.round(v)); if(a<100000||seen.has(a))return; seen.add(a);
+    [String(a),a.toLocaleString('es-ES'),a.toLocaleString('en-US')].forEach(f=>{
+      if(txt.includes(f)) bad.push('una cifra del informe coincide exactamente con la caja de un equipo ('+f+')'); }); });
+  return bad;
+}
+
+function buildPublicReport(){
+  const rc=repCfg();
+  const R=buildReportData(rc);
+  const raw=renderReportHTML(R);
+  const bad=auditReport(R,raw);
+  if(bad.length) throw new Error('Auditoría de privacidad: NO se publica. '+bad.join(' · '));
+  const gen=new Date().toLocaleString('es-ES',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  return {R,hash:djb2(raw),html:raw.split('@@GEN@@').join(gen)};
+}
+
+/* ---------- 5. PUBLICAR ---------- */
+let _repBusy=false;
+async function publishReport(manual){
+  const rc=repCfg();
+  if(!cfg.workerUrl) throw new Error('Falta la URL del Worker en Ajustes.');
+  if(!rc.key||rc.key.length<12) throw new Error('Escribe la clave de publicación (mínimo 12 caracteres): la misma que el secreto PUBLISH_KEY de tu Worker.');
+  await loadBase();
+  const B=buildPublicReport();
+  if(!manual&&B.hash===rc.lastHash) return {unchanged:true,url:repUrl()};
+  const r=await fetch(repUrl(),{method:'PUT',headers:{'X-Publish-Key':rc.key,'Content-Type':'text/html; charset=utf-8'},body:B.html});
+  const t=await r.text();
+  if(!r.ok){
+    let msg=t.slice(0,160);
+    if(r.status===401||r.status===403) msg='Clave rechazada por el Worker. Debe coincidir con el secreto PUBLISH_KEY.';
+    if(r.status===404||r.status===405) msg='Tu Worker aún no tiene las rutas del informe (ver LEEME-informe.md).';
+    throw new Error('Publicar falló (HTTP '+r.status+'): '+msg);
+  }
+  rc.lastPub=Date.now(); rc.lastHash=B.hash; rc.lastErr=''; saveCfg();
+  return {url:repUrl(),bytes:B.html.length};
+}
+async function unpublishReport(){
+  const rc=repCfg();
+  const r=await fetch(repUrl(),{method:'DELETE',headers:{'X-Publish-Key':rc.key}});
+  if(!r.ok) throw new Error('No se pudo despublicar (HTTP '+r.status+').');
+  rc.lastPub=0; rc.lastHash=''; saveCfg();
+}
+/* Publicacion automatica: cada vez que la app termina de cargar datos nuevos,
+   y como mucho una vez cada 10 minutos. Si no hay cambios, no sube nada. */
+async function maybeAutoPublish(){
+  try{
+    const rc=cfg.report; if(!rc||!rc.auto||!rc.key||!cfg.workerUrl||_repBusy) return;
+    if(Date.now()-(rc.lastPub||0)<10*60*1000) return;
+    if(!roundsPlayed()) return;
+    _repBusy=true;
+    await publishReport(false);
+    if($('s-informe').classList.contains('active')) renderInformeStatus();
+  }catch(err){
+    console.warn('autopublicar',err.message);
+    if(cfg.report){ cfg.report.lastErr=err.message; saveCfg(); }
+  }finally{ _repBusy=false; }
+}
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState!=='visible') return;
+  const rc=cfg.report; if(!rc||!rc.auto||!connected()) return;
+  if(Date.now()-(rc.lastPub||0)<30*60*1000) return;
+  loadBase(true).then(maybeAutoPublish).catch(e=>console.warn('refresco',e.message));
+});
+
+/* ---------- 6. PESTANA INFORME ---------- */
+async function loadInforme(){
+  if(!connected()){show('ajustes');return}
+  $('bInforme').disabled=true;$('bInforme').textContent='…';
+  try{ await loadBase(); renderInforme(); }
+  catch(err){ $('infWrap').innerHTML='<div class="card"><div class="empty">Error: '+esc(err.message)+'</div></div>'; }
+  $('bInforme').disabled=false;$('bInforme').textContent='Vista previa';
+}
+function renderInformeStatus(){
+  const rc=repCfg(), box=$('rpStatus'); if(!box) return;
+  const url=repUrl();
+  box.innerHTML=rc.lastPub
+    ? '<div class="note"><b>Publicado</b> el '+new Date(rc.lastPub).toLocaleString('es-ES')+
+      '<br>Enlace: <span style="font-family:var(--mono);word-break:break-all">'+esc(url)+'</span></div>'+
+      '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">'+
+        '<button class="sec" id="bRpCopy">Copiar enlace</button>'+
+        (navigator.share?'<button class="sec" id="bRpShare">Compartir…</button>':'')+
+        '<button class="sec" id="bRpOpen">Abrir</button>'+
+        '<button class="sec" id="bRpOff">Despublicar</button></div>'
+    : '<div class="note">Aún no se ha publicado. El enlace será:<br><span style="font-family:var(--mono);word-break:break-all">'+esc(url||'(falta la URL del Worker)')+'</span></div>';
+  if(rc.lastErr) box.innerHTML+='<div class="msg err show">Último intento automático: '+esc(rc.lastErr)+'</div>';
+  const on=(id,fn)=>{ const b=$(id); if(b) b.onclick=fn; };
+  const note=(ok,t)=>{ const m=$('mRp'); m.className='msg '+(ok?'ok':'err')+' show'; m.textContent=t; };
+  on('bRpCopy',async()=>{ try{ await navigator.clipboard.writeText(url); note(true,'Enlace copiado.'); }catch{ note(false,'No se pudo copiar: '+url); } });
+  on('bRpShare',()=>navigator.share({title:repCfg().title,url}).catch(()=>{}));
+  on('bRpOpen',()=>window.open(url,'_blank','noopener'));
+  on('bRpOff',async()=>{ if(!confirm('¿Despublicar el informe? El enlace dejará de funcionar.')) return;
+    try{ await unpublishReport(); renderInformeStatus(); note(true,'Informe despublicado.'); }catch(e){ note(false,e.message); } });
+}
+function renderInforme(){
+  const rc=repCfg(); saveCfg();
+  $('rpTitle').value=rc.title; $('rpKey').value=rc.key||''; $('rpAuto').checked=!!rc.auto;
+  $('rpSecs').innerHTML=REP_SECTIONS.map(([k,l])=>'<label style="display:flex;gap:8px;align-items:center;margin:7px 0;font-size:.84rem;color:var(--ink)">'+
+    '<input type="checkbox" data-rs="'+k+'" style="width:auto;margin:0"'+(rc.sec[k]?' checked':'')+'> '+esc(l)+'</label>').join('');
+  $('rpSecs').querySelectorAll('[data-rs]').forEach(c=>c.onchange=()=>{ rc.sec[c.dataset.rs]=c.checked?1:0; saveCfg(); previewReport(); });
+  renderInformeStatus();
+  previewReport();
+}
+function previewReport(){
+  const f=$('rpFrame'), m=$('mRp');
+  try{
+    const B=buildPublicReport();
+    f.srcdoc=B.html; f.style.display='block';
+    $('rpAudit').innerHTML='<span style="color:#1d7a37">✓ Auditoría de privacidad superada</span> · '+Math.round(B.html.length/1024)+' KB';
+    m.className='msg';
+    return B;
+  }catch(err){
+    f.style.display='none';
+    $('rpAudit').innerHTML='<span style="color:#b3202b">✗ '+esc(err.message)+'</span>';
+    return null;
+  }
+}
+$('bInforme').onclick=()=>loadInforme();
+$('rpTitle').onchange=()=>{ const rc=repCfg(); rc.title=$('rpTitle').value.trim().slice(0,80)||REP_DEFAULT.title; saveCfg(); previewReport(); };
+$('rpKey').onchange=()=>{ repCfg().key=$('rpKey').value.trim(); saveCfg(); };
+$('rpAuto').onchange=()=>{ repCfg().auto=$('rpAuto').checked; saveCfg();
+  const m=$('mRp'); m.className='msg ok show';
+  m.textContent=$('rpAuto').checked?'Publicación automática activada: se sube sola cada vez que la app se actualiza (como mucho cada 10 min).':'Publicación automática desactivada.'; };
+$('bRpPub').onclick=async()=>{
+  const m=$('mRp'); $('bRpPub').disabled=true; $('bRpPub').textContent='Publicando…';
+  try{
+    const rc=repCfg(); rc.key=$('rpKey').value.trim(); rc.title=$('rpTitle').value.trim().slice(0,80)||REP_DEFAULT.title; saveCfg();
+    const r=await publishReport(true);
+    renderInformeStatus();
+    m.className='msg ok show'; m.textContent='Publicado ('+Math.round((r.bytes||0)/1024)+' KB). Ya puedes compartir el enlace.';
+  }catch(err){ m.className='msg err show'; m.textContent=err.message; }
+  $('bRpPub').disabled=false; $('bRpPub').textContent='Publicar ahora';
+};
+$('bRpDown').onclick=()=>{
+  const B=previewReport(); if(!B) return;
+  downloadText('informe-zagalicos.html',B.html,'text/html');
+};
+$('bRpNew').onclick=()=>{
+  if(!confirm('Se creará un enlace nuevo y el anterior seguirá existiendo hasta que lo despubliques. ¿Continuar?')) return;
+  const rc=repCfg(); rc.id=rndHex(16); rc.lastPub=0; rc.lastHash=''; saveCfg(); renderInformeStatus();
+  const m=$('mRp'); m.className='msg ok show'; m.textContent='Enlace nuevo generado. Publica para activarlo.';
+};
+
+
+
+/* ============================================================
+   EXPORTACION PARA ANALISIS CON IA
+   Junta en un solo JSON todo lo que la app sabe (rivales, plantillas,
+   mercado, tesoreria, tendencias, historial) para que una IA lo estudie.
+   Cada seccion va en su propio try/catch: si una falla, el resto sale
+   igual y el fallo queda anotado en avisos_calidad.
+   ============================================================ */
+const AI_PROMPT="# ROL\n\nEres un analista experto en fantasy de fútbol, teoría de subastas y economía de ligas cerradas, especializado en **Biwenger (La Liga)**. Trabajas para un único manager, el que aparece como `meta.yo` en los datos. Tu objetivo es una sola cosa: **maximizar su probabilidad de ganar la liga (y el campeonato de invierno, J19), jugando siempre dentro de las normas de Biwenger y de la liga** (sin multicuentas, sin explotar fallos de la plataforma, sin acuerdos que las normas prohíban, sin automatizar acciones en la cuenta). Solo propones decisiones que el manager pueda tomar a mano en la app.\n\n# DATOS\n\nTe adjunto (o pego a continuación) un JSON generado por la app «Zagalicos · Centro de mando». Es tu **única fuente de verdad**. Lee primero estas secciones, porque condicionan todo lo demás:\n\n- `_guia`: significado de cada campo, unidades (importes en euros, `valor` = valor de mercado actual, `clausula` = cláusula de rescisión) y orden de las columnas de las tablas compactas.\n- `reglas`: reglas económicas de la liga. Cada una indica si está **confirmada** con datos reales o es una **hipótesis**. No trates una hipótesis como un hecho.\n- `avisos_calidad`: limitaciones conocidas de los datos (pocas jornadas, saldos de rivales reconstruidos y no reales, descuadres, eventos sin interpretar, etc.). Tenlos presentes en cada conclusión.\n\nDespués, el resto: `equipos` (estado, plantilla, tendencias y perfil de pujador de cada manager), `mercado` (subastas abiertas con la recomendación del modelo propio de la app), `clausulas` (mi exposición y mis objetivos), `tesoreria`, `historial` (traspasos, pujas, subidas de cláusula desde el último reinicio de liga), `red_traspasos`, `modelo_prediccion` y, si vienen, `precios_diarios` y `saldo_diario`.\n\n# REGLAS DE TRABAJO (innegociables)\n\n1. **Usa solo lo que está en el JSON.** Si necesitas un dato que no está, dilo y di qué decisión cambiaría. No inventes cifras, jugadores, lesiones, alineaciones ni resultados reales. No uses conocimiento propio sobre el estado actual de jugadores de La Liga como si fuera un dato del archivo.\n2. **Separa tres niveles** y etiquétalos: **[HECHO]** (sale directamente de los datos), **[INFERENCIA]** (deducción razonable; di en qué se apoya) y **[HIPÓTESIS]** (no verificable con estos datos; di cómo comprobarla).\n3. **Cuantifica la incertidumbre.** Con pocas jornadas jugadas casi todo es ruido: no confundas suerte con nivel. Da rangos, no cifras falsamente precisas. Si una conclusión depende de una muestra pequeña, dilo.\n4. **Revisa el modelo de la app, no lo repitas.** Las pujas sugeridas y las probabilidades vienen de un modelo heurístico (logística sobre la puja esperada de cada rival). Cuestiónalas con los datos de `historial` y los perfiles de pujador: ¿se sobrepaga?, ¿hay rivales que siempre pujan redondo o en el último segundo?, ¿el número real de pujas (`pujas_reales`) cambia la lectura? Si ves un fallo del modelo, dilo y propón la corrección.\n5. **Importes en millones con 2 decimales** (p. ej. `4,35M`). Nunca recomiendes una puja o una cláusula que supere el techo del manager ni lo deje en descubierto sin plan para cubrirlo.\n6. **Sé conciso.** Tablas y viñetas, sin relleno. Responde en español.\n\n# QUÉ HAY QUE ANALIZAR\n\nHaz el análisis **de esta jornada** (el estado actual de los datos), con visión de temporada:\n\n**A. Diagnóstico de cada rival** — para cada manager: situación de puntos y tendencia (media, últimas jornadas, posición por jornada), liquidez real y techo, necesidades de plantilla por posición, actividad (días sin entrar), si está acumulando dinero (`acumulacion_5d`), estilo de puja (multiplicador sobre valor, participación, «redondo» vs «francotirador»), y riesgo de descubierto o de quedarse sin once. Clasifica a los rivales en: **amenaza deportiva**, **amenaza en subastas (compiten conmigo por los mismos jugadores)**, **amenaza de cláusula** y **presa fácil**.\n\n**B. Mercado** — para cada subasta abierta: ¿merece la pena?, ¿cuál es la puja máxima racional (no la que maximiza la probabilidad a cualquier precio, sino la que maximiza el valor esperado)?, ¿qué rivales encajan y pujarán probablemente?, ¿qué ocurre si no la gano? Ordena por valor esperado y marca explícitamente **qué subastas dejar pasar**. Considera que solo puntúan 11 jugadores: el valor de un fichaje es lo que suma *por encima del titular al que desplaza*, más su valor de reventa.\n\n**C. Cláusulas** — (1) **Defensa**: qué jugadores míos son vulnerables ahora mismo (cláusula baja frente a valor, no bloqueados, con rivales activos que pueden pagarla). Qué merece la pena blindar y cuánto cuesta cada punto de protección frente al riesgo. (2) **Ataque**: qué cláusulas de rivales son una ganga (cláusula por debajo o cerca del valor, jugador titular, rival inactivo o que no puede reaccionar) y cuáles puedo pagar sin comprometer la tesorería.\n\n**D. Tesorería** — ingreso previsto de la próxima jornada (fijo + puntos + bonus por posición inverso + racha diaria), descubierto potencial según el gasto que propongas, y **qué vender y en qué orden** si hace falta liquidez (primero lo que no juega). Señala el calendario de pagos que conviene respetar.\n\n**E. Tendencias de precio y arbitraje** — jugadores que suben o bajan de valor (`d3`, `d7`, `d30`, `frena`), cuáles están cerca de su techo, cuáles compraría hoy para vender más caro; cuáles vender antes de que caigan. Usa `precios_diarios` si viene.\n\n**F. Relaciones ocultas y patrones** — usa `red_traspasos` e `historial` para buscar: quién vende a quién y con qué sobreprecio, parejas de managers que se intercambian jugadores, rivales que pujan siempre por los mismos perfiles que yo, managers que compran justo tras cobrar, patrones de horario o de cierre de subasta, comportamiento tras un clausulazo, jugadores que rotan mucho de manos. Para cada patrón: evidencia, tamaño de muestra y qué acción concreta permite.\n\n**G. Competición** — comenta `modelo_prediccion` con espíritu crítico (¿λ y R² tienen sentido con esta muestra?, ¿qué sesgos tiene?) y di qué **3 variables** mueven más mis probabilidades de ser campeón de invierno y de liga, y qué acciones las mueven.\n\n# FORMATO DE LA RESPUESTA\n\n1. **Resumen ejecutivo** (máx. 8 líneas): la situación y las 3 decisiones más importantes de esta jornada.\n2. **Plan de acción priorizado**: tabla con *acción · importe máximo · por qué · probabilidad/riesgo · alternativa si falla*. Máximo 8 filas, ordenadas por valor esperado.\n3. **Análisis por bloques A–G**, cada uno con sus etiquetas [HECHO]/[INFERENCIA]/[HIPÓTESIS].\n4. **Alertas**: lo que puede salir mal en las próximas 48 h (descubierto, cláusulas que vencen o se desbloquean, subastas que cierran, rivales que van a cobrar).\n5. **Qué datos faltan** para mejorar el próximo análisis (concretos: «el JSON de X», «las pujas de la subasta Y»…).\n\n# ANTES DE RESPONDER\n\nComprueba que (a) ninguna recomendación supera el saldo/techo, (b) todos los nombres e importes existen en el JSON, (c) has señalado los avisos de calidad que afectan a tus conclusiones y (d) cada afirmación fuerte lleva su etiqueta.\n";
+
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+
+async function fetchMarketForExport(onProgress){
+  const mk=await api('/as/api/v2/market');
+  const bal=dig(mk,['data.status.balance']);
+  const maxBid=dig(mk,['data.maximumBid'])??dig(mk,['data.status.maximumBid']);
+  market=(dig(mk,['data.sales'])||[]).map(s=>({
+    id:dig(s,['player.id']),price:s.price,seller:dig(s,['user.name']),
+    sellerId:dig(s,['user.id']),until:s.until,clause:dig(s,['player.owner.clause'])
+  })).filter(x=>x.id);
+  let i=0;
+  for(const m of market){
+    i++; if(onProgress) onProgress(i,market.length);
+    try{ m.realBids=await realBidCount(m.id); }catch{ m.realBids=null; }
+    await sleep(120);
+  }
+  return {bal,maxBid};
+}
+
+function buildAIExport(mk,opts){
+  opts=opts||{};
+  const errs=[];
+  const safe=(label,fn,dflt=null)=>{ try{return fn()}catch(e){errs.push(label+': '+e.message);return dflt} };
+  const rn=(n,d)=>n==null||!isFinite(n)?null:Math.round(n*Math.pow(10,d))/Math.pow(10,d);
+  const iso=ts=>ts?new Date(ts*1000).toISOString().slice(0,16).replace('T',' '):null;
+  const now=Math.floor(Date.now()/1000);
+  const me=teams.find(t=>String(t.id)===String(cfg.userId));
+  const myCeil=(mk&&mk.maxBid)??(me?ceiling(me):null);
+
+  const mat=safe('puntos por jornada',roundPointsMatrix,{rounds:[],per:{}});
+  const rounds=mat.rounds, per=mat.per;
+  const ser=safe('serie de puntos',buildPointsSeries,{offsets:{}});
+  const fc=safe('prevision de ingresos',incomeForecast,{});
+  const sim=safe('simulacion de temporada',()=>simulateSeason(2000));
+
+  // posicion de cada equipo en cada jornada
+  const rankPer={}; teams.forEach(t=>rankPer[t.id]=rounds.map(()=>null));
+  rounds.forEach((_,i)=>{
+    [...teams].filter(t=>per[t.id]&&per[t.id][i]!=null).sort((a,b)=>per[b.id][i]-per[a.id][i])
+      .forEach((t,k)=>{ rankPer[t.id][i]=k+1; });
+  });
+
+  const pl=pid=>{
+    const p=allPlayers[pid]||{}, m=momentum(pid)||{};
+    return {id:pid,nombre:p.name||('#'+pid),pos:POS[p.position]||p.position||null,
+      club:dig(p,['team.name']),valor:p.price??null,pts_temporada:p.points??null,
+      pts_esperados:rn(expPoints(pid),2),estado:p.status??null,forma:Array.isArray(p.fitness)?p.fitness:null,
+      var_3d:rn(m.d3,4),var_7d:rn(m.d7,4),var_30d:rn(m.d30,4),
+      frena:!!(m.decel!=null&&m.d7>0.02&&m.decel<-0.4),veces_traspasado:liquidity(pid)};
+  };
+
+  const byPoints=[...teams].sort((a,b)=>(b.points||0)-(a.points||0));
+
+  const equipos=teams.map(t=>safe('equipo '+t.name,()=>{
+    const sq=squads[t.id]||[];
+    const xi=new Set(bestXI(t.id).map(p=>p.id));
+    const pr=profiles[t.id]||null, nd=needs(t), acc=accumulation(t.id,5), sp=streakPerRound(t.id);
+    const vals=(per[t.id]||[]).filter(x=>x!=null);
+    const ultimas=vals.slice(-3);
+    const f=fc[t.id], pb=sim&&sim.res[t.id];
+    return {
+      id:t.id,nombre:t.name,es_mio:String(t.id)===String(cfg.userId),
+      clasificacion:byPoints.findIndex(x=>x.id===t.id)+1,
+      puntos_oficiales:t.points??null,puntos_de_salida_extra:ser.offsets[t.id]||0,
+      saldo_calculado:balances[t.id]??null,
+      saldo_real:(String(t.id)===String(cfg.userId)&&balCheck)?balCheck.real:null,
+      techo_puja:ceiling(t),valor_plantilla:t.teamValue??null,n_jugadores:t.teamSize??sq.length,
+      dias_sin_entrar:daysSince(t.lastAccess),
+      puntos_por_jornada:per[t.id],posicion_por_jornada:rankPer[t.id],
+      media_puntos:vals.length?rn(vals.reduce((a,b)=>a+b,0)/vals.length,2):null,
+      media_ultimas_3:ultimas.length?rn(ultimas.reduce((a,b)=>a+b,0)/ultimas.length,2):null,
+      prevision_proxima_jornada:f?{pts:rn(f.pts,1),puesto:f.pos,ingreso:f.income}:null,
+      racha_diaria_media_por_jornada:sp.perRound,
+      composicion:nd?nd.have:null,huecos_por_posicion:nd?nd.gap:null,
+      acumulacion_5d:acc?{variacion_saldo:acc.dBal,variacion_plantilla:acc.dSize,dias:acc.days}:null,
+      perfil_pujador:pr?{pujas_vistas:pr.n,victorias:pr.wins,participacion:rn(pr.partRate,3),
+        multiplicador_medio_sobre_valor:rn(pr.mult,3),redondea:pr.rounds,francotirador:pr.snipes,
+        ratio_francotirador:rn(pr.sniper,2),compras_por_posicion:pr.posBuys}:null,
+      probabilidades:pb?{campeon_invierno:rn(pb.champWinter,3),podio_invierno:rn(pb.podiumWinter,3),
+        campeon_liga:rn(pb.champEnd,3),podio_liga:rn(pb.podiumEnd,3),
+        puntos_proyectados_invierno:Math.round(pb.projWinter),puntos_proyectados_fin:Math.round(pb.projEnd)}:null,
+      plantilla:sq.map(p=>({...pl(p.id),clausula:p.clause??null,pagado:p.paid??null,
+        ratio_clausula_valor:(p.clause&&p.price)?rn(p.clause/p.price,2):null,
+        bloqueado_ahora:!!(p.lockedUntil&&p.lockedUntil>now),bloqueado_hasta:iso(p.lockedUntil),
+        en_plantilla_desde:iso(p.since),titular_probable:xi.has(p.id)}))
+    };
+  },{id:t.id,nombre:t.name,error:true}));
+
+  // mercado con la recomendacion del modelo propio
+  const mercado=safe('mercado',()=>market.map(m=>{
+    const r=recommendBid(m.id,m.price,myCeil,m.realBids);
+    const v=bidValue(m.id,r.rec);
+    return {...pl(m.id),precio_salida:m.price,vendedor:m.seller||'mercado libre',cierra:iso(m.until),
+      clausula_actual:m.clause??null,pujas_reales:m.realBids??null,
+      puja_sugerida_app:r.rec,prob_ganar_app:rn(r.p,3),veces_sobre_valor:rn(r.rec/m.price,3),
+      confianza:confidence(r.bs).t,
+      rentabilidad:{euros_por_jornada:Math.round(v.perRound||0),margen_pts_sobre_titular:rn(v.marg,2),
+        sustituye_a:v.repl?v.repl.name:null,reventa_10d:Math.round(v.financial||0),amortiza_en_jornadas:v.payback||null},
+      rivales_probables:r.bs.slice(0,6).map(b=>({equipo:b.team.name,puja_esperada:Math.round(b.mu),
+        techo:b.cap,necesita_posicion:b.needsPos,activo:b.active,francotirador:b.sniper!=null?rn(b.sniper,2):null}))};
+  }),[]);
+
+  // clausulas: mi exposicion y mis objetivos
+  const clausulas=safe('clausulas',()=>{
+    const expo=(squads[cfg.userId]||[]).filter(p=>p.clause&&p.price).map(p=>{
+      const pagan=teams.filter(t=>String(t.id)!==String(cfg.userId)&&ceiling(t)>=p.clause)
+        .map(t=>({equipo:t.name,dias_sin_entrar:daysSince(t.lastAccess)}));
+      return {...pl(p.id),clausula:p.clause,ratio:rn(p.clause/p.price,2),
+        bloqueado_ahora:!!(p.lockedUntil&&p.lockedUntil>now),bloqueado_hasta:iso(p.lockedUntil),
+        rivales_que_pueden_pagarla:pagan,activos_ultimos_3d:pagan.filter(x=>x.dias_sin_entrar==null||x.dias_sin_entrar<=3).length};
+    }).sort((a,b)=>a.ratio-b.ratio);
+    const obj=[];
+    teams.forEach(t=>{ if(String(t.id)===String(cfg.userId))return;
+      (squads[t.id]||[]).forEach(p=>{ if(!p.clause||!p.price)return;
+        obj.push({...pl(p.id),dueno:t.name,dueno_dias_sin_entrar:daysSince(t.lastAccess),dueno_saldo:balances[t.id]??null,
+          clausula:p.clause,ratio:rn(p.clause/p.price,2),margen:p.price-p.clause,
+          bloqueado_ahora:!!(p.lockedUntil&&p.lockedUntil>now),puedo_pagarla:myCeil!=null&&myCeil>=p.clause,
+          titular_en_su_equipo:bestXI(t.id).some(x=>x.id===p.id)});
+      });
+    });
+    obj.sort((a,b)=>a.ratio-b.ratio);
+    return {mi_techo:myCeil,mi_exposicion:expo,objetivos_rivales_top60:obj.slice(0,60)};
+  },{});
+
+  // tesoreria
+  const tesoreria=safe('tesoreria',()=>{
+    const bal=balCheck?balCheck.real:(balances[cfg.userId]??null);
+    const f=fc[cfg.userId], sp=streakPerRound(cfg.userId);
+    return {saldo_hoy:bal,ingreso_jornada_previsto:f?f.income:null,racha_diaria_media_por_jornada:sp.perRound,
+      bonos_racha_cobrados:sp.n,gasto_en_estudio:Number(cfg.spend||0),
+      jornadas_restantes:roundsLeft(),
+      sugerencia_ventas_para_liquidez:(()=>{ const need=Math.max(0,(Number(cfg.spend||0))-(bal||0)-(f?f.income:0)-sp.perRound);
+        if(!need)return {descubierto:0,ventas:[]};
+        const s=sellSuggestions(need);
+        return {descubierto:need,cubre:s.covered,ventas:s.picks.map(p=>({nombre:p.name,valor:p.price,venta_rapida_50:Math.round(p.price*0.5),titular:p.inXI,pts_esperados:rn(p.xp,2)}))}; })()};
+  },{});
+
+  // historial desde el ultimo reinicio
+  const evsAll=loadArch().events;
+  const resetTs=evsAll.filter(e=>e.type==='leagueReset').reduce((m,e)=>Math.max(m,e.date),0);
+  const evs=[...evsAll].filter(e=>e.date>=resetTs).sort((a,b)=>a.date-b.date);
+  const traspasos=[], subidas=[], otros=[], conteo={}, pares={}, bonos={};
+  evs.forEach(ev=>{
+    conteo[ev.type]=(conteo[ev.type]||0)+1;
+    const items=Array.isArray(ev.content)?ev.content:(ev.content?[ev.content]:[]);
+    if(ev.type==='transfer'||ev.type==='market'){
+      items.forEach(it=>{
+        traspasos.push([iso(ev.date),ev.type,nm1(it.player),it.from?it.from.name:null,it.to?it.to.name:null,it.amount??null,
+          it.type||null,(it.bids||[]).map(b=>[b.user?b.user.name:null,b.amount])]);
+        if(it.from&&it.to){ const k=it.from.name+'→'+it.to.name; pares[k]=pares[k]||{de:it.from.name,a:it.to.name,n:0,total:0};
+          pares[k].n++; pares[k].total+=it.amount||0; }
+      });
+    }else if(ev.type==='clauseIncrement'){
+      items.forEach(it=>subidas.push([iso(ev.date),it.user?it.user.name:null,nm1(it.player),it.amount??null,it.releaseClause??null]));
+    }else if(ev.type==='bonus'){
+      items.forEach(it=>{ if(!it||!it.user)return; const b=bonos[it.user.name]=bonos[it.user.name]||{n:0,total:0};
+        b.n++; b.total+=it.amount||0; });
+    }else if(['loan','loanReturn','adminTransfer'].includes(ev.type)){
+      otros.push({fecha:iso(ev.date),tipo:ev.type,contenido:JSON.stringify(ev.content).slice(0,400)});
+    }
+  });
+  function nm1(pid){ return (allPlayers[pid]&&allPlayers[pid].name)||('#'+pid); }
+
+  // series diarias
+  let precios=null, saldoDiario=null;
+  if(opts.precios){
+    precios=safe('precios diarios',()=>{
+      const snaps=jget(K_SNAP,{}), keys=Object.keys(snaps).sort();
+      const ids=new Set(); Object.values(squads).forEach(sq=>sq.forEach(p=>ids.add(p.id))); market.forEach(m=>ids.add(m.id));
+      const series={}; ids.forEach(id=>{ series[id]=keys.map(k=>snaps[k][id]!=null?Math.round(snaps[k][id]/1000):null); });
+      return {unidad:'miles de euros',fechas:keys,nombres:Object.fromEntries([...ids].map(id=>[id,nm1(id)])),series};
+    });
+  }
+  saldoDiario=safe('saldo diario',()=>{
+    const s=jget(K_TEAMSNAP,{}), keys=Object.keys(s).sort(); const eq={};
+    teams.forEach(t=>{ eq[t.name]={saldo:keys.map(k=>s[k][t.id]?s[k][t.id].b:null),
+      valor_plantilla:keys.map(k=>s[k][t.id]?s[k][t.id].v:null),n_jugadores:keys.map(k=>s[k][t.id]?s[k][t.id].n:null)}; });
+    return {fechas:keys,equipos:eq};
+  });
+
+  const modelo=sim?{jornadas_jugadas:sim.played,hasta_invierno:sim.toWinter,hasta_fin:sim.toEnd,
+    ruido_semanal_sd:rn(sim.sd,2),lambda_peso_media_propia:rn(sim.model.lambda,3),
+    r2_valor_plantilla_vs_puntos:rn(sim.model.r2,3),simulaciones:2000,
+    metodo:'encogimiento James-Stein hacia regresion puntos~valor de plantilla + Monte Carlo gaussiano'}:null;
+
+  const sinInterpretar=safe('eventos sin interpretar',()=>findUnhandledMoneyEvents().length,null);
+  const avisos=[
+    'Jornadas jugadas: '+roundsPlayed()+'. Con tan pocas jornadas la varianza es enorme: medias y proyecciones son orden de magnitud.',
+    'Puntos esperados por jugador calculados con: '+XP_SOURCE+'.',
+    'Los saldos de los RIVALES se reconstruyen a partir del tablon de eventos, no son los reales (Biwenger no los expone). Solo el saldo propio se contrasta con el real.',
+    balCheck?('Contraste de mi saldo: real '+balCheck.real+' vs calculado '+balCheck.calc+' (diferencia '+balCheck.diff+').'):'No se pudo contrastar mi saldo con el real.',
+    'Eventos con dinero sin interpretar en el archivo: '+(sinInterpretar==null?'desconocido':sinInterpretar)+'.',
+    'Las subastas activas solo muestran el NUMERO de pujas (pujas_reales), nunca quien puja ni cuanto.',
+    hasPrevSeason()?'Hay puntos de la temporada pasada en el volcado.':'No hay puntos de la temporada pasada en el volcado general de jugadores.',
+    'Equipos con puntos de salida extra (entraron tarde): '+teams.filter(t=>(ser.offsets[t.id]||0)>0).map(t=>t.name+' (+'+ser.offsets[t.id]+')').join(', ')+'.',
+    mk?'Mercado cargado en el momento de exportar.':'Mercado NO cargado: la seccion mercado esta vacia.'
+  ].concat(errs.map(e=>'Fallo parcial al exportar -> '+e));
+
+  const regla=(texto,estado)=>({texto,estado});
+  return {
+    meta:{app:'Zagalicos · Centro de mando',generado:iso(now)+' UTC',liga_id:cfg.leagueId,
+      yo:{id:cfg.userId,nombre:me?me.name:null},jornadas_jugadas:roundsPlayed(),
+      jornadas_restantes:roundsLeft(),jornadas_temporada:SEASON_ROUNDS,jornada_cierre_invierno:WINTER_ROUND,
+      desde_reinicio_de_liga:iso(resetTs)},
+    _guia:{
+      importes:'Todos los importes en euros salvo indicacion. valor = valor de mercado; clausula = clausula de rescision.',
+      variaciones:'var_3d/7d/30d = variacion relativa del valor (0,05 = +5%). frena = sube pero se desacelera.',
+      puntos_por_jornada:'Un valor por jornada archivada, en orden cronologico; null = sin dato de ese equipo.',
+      posicion_por_jornada:'1 = mejor puntuacion de esa jornada.',
+      historial_traspasos_columnas:['fecha','tipo (transfer|market)','jugador','de','a','importe','subtipo','pujas [[usuario,importe]]'],
+      historial_subidas_clausula_columnas:['fecha','manager','jugador','importe_pagado','nueva_clausula'],
+      techo_puja:'Aproximacion de la app: saldo + 25% del valor de plantilla.',
+      titular_probable:'Once estimado por la app con pts_esperados, respetando minimos por posicion.'
+    },
+    reglas:{
+      saldo_inicial_tras_reinicio:regla(INITIAL_BALANCE,'confirmado'),
+      pago_por_jornada:regla({fijo:PAY_FIXED,por_punto:PAY_PER_POINT,bonus_posicion_base_1o:PAY_POS_BASE,paso_por_puesto:PAY_POS_STEP,tope:PAY_POS_CAP,
+        nota:'El bonus de posicion es INVERSO: cuanto peor quedas, mas cobras. Extras: 300.000 por jugador en once ideal, 200.000 por MVP.'},'confirmado contra roundFinished archivados'),
+      subastas:regla('Mercado por subasta con pujas ocultas; solo se ve el numero de pujas activas.','confirmado'),
+      clausulas:regla('Se permite el clausulazo (clause: steal). Subir la clausula de un jugador resta su importe del saldo del manager.','clausulazo confirmado; coste de subida inferido (pendiente de verificar contra saldo real)'),
+      tramos_clausula_app:regla(CLAUSE_TIERS.map(t=>({desde:t[0],hasta:isFinite(t[1])?t[1]:null,clausula:t[2]})),'hipotesis, no confirmada'),
+      venta_rapida:regla('50% del valor de mercado','confirmado en ajustes de la liga'),
+      racha_diaria:regla('Bonus por iniciar sesion dias seguidos (visto: 250.000 € cada 5 dias).','confirmado'),
+      once:regla({minimos_por_posicion:XI_MIN,plantilla_tipo:SQUAD_TARGET,minimo_plantilla:MIN_SQUAD},'configuracion de la app')
+    },
+    equipos,mercado,clausulas,tesoreria,
+    historial:{traspasos:traspasos,subidas_clausula:subidas,otros_eventos:otros,conteo_por_tipo:conteo,bonos_por_manager:bonos},
+    red_traspasos:Object.values(pares).sort((a,b)=>b.total-a.total),
+    modelo_prediccion:modelo,
+    precios_diarios:precios,saldo_diario:saldoDiario,
+    avisos_calidad:avisos
+  };
+}
+
+function downloadText(name,text,type){
+  const b=new Blob([text],{type:type||'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download=name;
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },1500);
+}
+async function copyText(t){
+  try{ await navigator.clipboard.writeText(t); return true; }
+  catch{
+    try{ const ta=document.createElement('textarea'); ta.value=t; ta.style.position='fixed'; ta.style.opacity='0';
+      document.body.appendChild(ta); ta.select(); const ok=document.execCommand('copy'); ta.remove(); return ok; }
+    catch{ return false; }
+  }
+}
+
+async function runAIExport(mode){
+  const m=$('mAI'); m.className='msg ok show';
+  if(!connected()){ m.className='msg err show'; m.textContent='Conecta la app primero (Ajustes).'; return; }
+  ['bAIDown','bAICopy'].forEach(id=>$(id).disabled=true);
+  try{
+    m.textContent='Cargando liga y plantillas…';
+    squads={};
+    await loadBase(true);
+    await checkBalance();
+    m.textContent='Cargando mercado…';
+    const mk=await fetchMarketForExport((i,n)=>{ m.textContent='Cargando pujas reales '+i+'/'+n+'…'; });
+    m.textContent='Montando el informe…';
+    const data=buildAIExport(mk,{precios:$('aiPrices').checked});
+    const txt=JSON.stringify(data);
+    const kb=Math.round(txt.length/1024);
+    if(mode==='copy'){
+      const ok=await copyText(txt);
+      m.textContent=ok?('Datos copiados ('+kb+' KB). Pégalos en la IA tras el prompt.'):'No se pudo copiar; usa «Descargar».';
+      if(!ok) m.className='msg err show';
+    }else{
+      downloadText('zagalicos-ia-'+today()+'.json',txt);
+      m.textContent='Descargado ('+kb+' KB). Adjúntalo a la IA junto con el prompt.';
+    }
+    const warn=data.avisos_calidad.filter(a=>a.startsWith('Fallo parcial'));
+    if(warn.length) m.textContent+=' ⚠ '+warn.length+' sección(es) con fallo parcial (ver avisos_calidad).';
+  }catch(err){ m.className='msg err show'; m.textContent='Error: '+err.message; }
+  ['bAIDown','bAICopy'].forEach(id=>$(id).disabled=false);
+}
+$('bAIDown').onclick=()=>runAIExport('download');
+$('bAICopy').onclick=()=>runAIExport('copy');
+$('bAIPrompt').onclick=async()=>{
+  const m=$('mAI'); const ok=await copyText(AI_PROMPT);
+  m.className='msg '+(ok?'ok':'err')+' show';
+  m.textContent=ok?'Prompt copiado.':'No se pudo copiar el prompt.';
+};
+
 
 $('bLiga').onclick=()=>loadLiga();
 
